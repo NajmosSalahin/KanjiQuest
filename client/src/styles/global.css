@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html[data-theme='dark'] {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--ink-secondary);
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: var(--ink-primary);
+    font-family: 'Fraunces', Georgia, serif;
+  }
+
+  /* Focus ring (§6.15 / §12) — visible on every interactive element */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* Furigana (§4): small, muted, above kanji */
+  ruby rt {
+    font-size: 0.5em;
+    color: var(--ink-muted);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+
+  /* Respect reduced motion (§3.6) */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Skip link (§12) — first focusable element on every page */
+  .skip-link {
+    position: absolute;
+    left: 8px;
+    top: -48px;
+    z-index: 100;
+    background: var(--bg-surface);
+    color: var(--ink-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: top var(--duration-fast) var(--ease-out);
+  }
+  .skip-link:focus {
+    top: 8px;
+  }
+}
