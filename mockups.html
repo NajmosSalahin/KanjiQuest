@@ -897,14 +897,15 @@ document.querySelectorAll('.rating').forEach(btn => btn.addEventListener('click'
 
 /* ---------- stroke-order animation demo (§7.4) ----------
    Idle: all strokes visible in --ink-muted.
-   Play: each stroke draws via stroke-dasharray over 400ms (800ms at 0.5×),
-   staggered 200ms (400ms at 0.5×); current stroke highlighted vermillion,
+   Play: each stroke draws via stroke-dasharray over 600ms (1200ms at 0.5×),
+   staggered 300ms (600ms at 0.5×) — owner-approved deviation D5, slowing the
+   spec's 400ms/200ms; current stroke highlighted vermillion,
    settled strokes return to --ink-primary.                            */
 const strokePaths = Array.from(document.querySelectorAll('.stroke-svg path'));
 let slow = false, timers = [], running = false;
 
-function drawMs(){ return slow ? 800 : 400; }
-function gapMs(){ return slow ? 400 : 200; }
+function drawMs(){ return slow ? 1200 : 600; }   // D5: spec said 400ms at 1×
+function gapMs(){ return slow ? 600 : 300; }     // D5: spec said 200ms stagger
 
 function resetStrokes(){
   timers.forEach(clearTimeout); timers = []; running = false;
@@ -918,8 +919,7 @@ function resetStrokes(){
 function startStroke(i){
   if (!running) return;
   const p = strokePaths[i];
-  strokePaths.forEach(x => { if (x !== p) x.classList.remove('current'); });
-  p.classList.add('current');                        // vermillion highlight
+  p.classList.add('current');                        // vermillion while drawing
   p.style.transition = 'none';
   p.style.strokeDashoffset = '1';                    // hide, then draw
   void p.getBoundingClientRect();

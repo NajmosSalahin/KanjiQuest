@@ -88,6 +88,7 @@ Recorded here so `DECISIONS.md` and the phase reviews stay honest. Every entry i
 | D2 | §0.1 Q3, §7.11 | Google OAuth removed completely, not scaffolded disabled. | Owner decision. |
 | D3 | §0.1 Q4, §11.3 | 23 achievements instead of 25; Completionist threshold 19. | Owner decision — defer social. |
 | D4 | §3.8 | `howler` unused (Web Audio API instead). | Owner decision — zero binary assets. |
+| D5 | §7.4 | Stroke-order animation timings slowed: **1× = 600ms draw / 300ms stagger** (spec: 400ms / 200ms), **0.5× = 1200ms / 600ms** (spec implied 800ms / 400ms). Toggle defaults to 1×. Easing, idle `--ink-muted`, and vermillion current-stroke highlight unchanged. | Owner reviewed the mockups and found the spec timings too fast ("the stroke order is fast"). |
 
 No other deviations are authorized. Any new deviation requires owner approval before implementation and must be appended to this table and `DECISIONS.md`.
 
