@@ -130,7 +130,9 @@ ruby rt{
   border-radius:9999px;background:var(--bg-subtle);border:1px solid var(--border-strong);
   display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:600;color:var(--ink-secondary);flex:none;
+  font-family:var(--font-body);padding:0;
 }
+button.avatar{cursor:pointer}
 .avatar.s32{width:32px;height:32px}
 .avatar.s28{width:28px;height:28px}
 .avatar.s128{width:128px;height:128px;font-size:var(--text-2xl)}
@@ -421,7 +423,7 @@ ruby rt{
           20
         </span>
         <span class="nav-xp">2,905</span>
-        <div class="avatar s32" aria-label="Profile avatar">AU</div>
+        <button type="button" class="avatar s32" aria-label="Profile menu">AU</button>
         <button class="hamburger" aria-label="Open menu">
           <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
@@ -697,7 +699,7 @@ ruby rt{
           20
         </span>
         <span class="nav-xp">2,905</span>
-        <div class="avatar s32" aria-label="Profile avatar">AU</div>
+        <button type="button" class="avatar s32" aria-label="Profile menu">AU</button>
         <button class="hamburger" aria-label="Open menu">
           <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
@@ -888,11 +890,13 @@ themeBtn.addEventListener('click', () => {
   syncLabel();
 });
 
-/* ---------- rating button fill demo (§7.2: 220ms fill, then card out) ---------- */
+/* ---------- rating button fill demo (§7.2) ----------
+   In the real session: 220ms fill in the rating color, then the card
+   transitions out. The mockup has no next card, so the fill stays
+   selected until you click a different rating — easier to evaluate.   */
 document.querySelectorAll('.rating').forEach(btn => btn.addEventListener('click', () => {
   document.querySelectorAll('.rating').forEach(b => b.classList.remove('filled'));
   btn.classList.add('filled');
-  setTimeout(() => btn.classList.remove('filled'), 900);
 }));
 
 /* ---------- stroke-order animation demo (§7.4) ----------
