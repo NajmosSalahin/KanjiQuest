@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+coverage/
+.data/
+server/uploads/
+package-lock.json
+mockups.html
+prompt.md

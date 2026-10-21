@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+build/
+.vite/
+
+# environment
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+
+# coverage / test output
+coverage/
+
+# os / editor
+.DS_Store
+.vscode/
+.idea/
+
+# runtime uploads & seed cache
+uploads/
+.data/
