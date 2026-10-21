@@ -730,7 +730,7 @@ ruby rt{
               <button class="iconbtn" id="strokePause" aria-label="Pause stroke animation">
                 <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" fill="currentColor" stroke="none"/></svg>
               </button>
-              <button class="speed" id="strokeSpeed" aria-label="Toggle animation speed">1× / 0.5×</button>
+              <button class="speed slow" id="strokeSpeed" aria-label="Toggle animation speed">1× / 0.5×</button>
               <button class="iconbtn" id="strokeReset" aria-label="Reset stroke animation">
                 <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
               </button>
@@ -902,7 +902,7 @@ document.querySelectorAll('.rating').forEach(btn => btn.addEventListener('click'
    spec's 400ms/200ms; current stroke highlighted vermillion,
    settled strokes return to --ink-primary.                            */
 const strokePaths = Array.from(document.querySelectorAll('.stroke-svg path'));
-let slow = false, timers = [], running = false;
+let slow = true, timers = [], running = false;   // D5: default 0.5×
 
 function drawMs(){ return slow ? 1200 : 600; }   // D5: spec said 400ms at 1×
 function gapMs(){ return slow ? 600 : 300; }     // D5: spec said 200ms stagger
