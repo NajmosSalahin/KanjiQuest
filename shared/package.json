@@ -1,0 +1,11 @@
+{
+  "name": "@kanjigarden/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "constants.js",
+  "exports": {
+    ".": "./constants.js",
+    "./typedefs": "./typedefs.js"
+  }
+}
