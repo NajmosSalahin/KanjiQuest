@@ -9,7 +9,7 @@
     "client"
   ],
   "scripts": {
-    "test": "npm run test -w server",
+    "test": "npm run test -w server && npm run test -w client",
     "lint": "eslint .",
     "format": "prettier --write .",
     "prepare": "husky"

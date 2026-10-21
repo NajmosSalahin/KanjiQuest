@@ -1,5 +1,10 @@
-import 'dotenv/config';
+import { config as loadEnvFile } from 'dotenv';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
+
+// Monorepo: `npm run dev -w server` runs with cwd=server/, so load the root
+// .env (the documented location) explicitly. Existing env vars still win.
+loadEnvFile({ path: fileURLToPath(new URL('../../../.env', import.meta.url)) });
 
 const isProduction = process.env.NODE_ENV === 'production';
 
