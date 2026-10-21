@@ -1,16 +1,22 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast.jsx';
+import { AppShell } from './components/AppShell.jsx';
+import { RequireAuth, RedirectIfAuthed } from './components/guards.jsx';
+import { useAuth } from './stores/auth.js';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 
 const KitchenSink = lazy(() => import('./pages/KitchenSink.jsx'));
 
 const isDev = import.meta.env.DEV;
 
-function Blank() {
-  return null;
-}
-
 export default function App() {
+  useEffect(() => {
+    useAuth.getState().hydrate();
+  }, []);
+
   return (
     <ToastProvider>
       <BrowserRouter>
@@ -19,8 +25,33 @@ export default function App() {
         </a>
         <Suspense fallback={null}>
           <Routes>
+            <Route
+              path="/login"
+              element={
+                <RedirectIfAuthed>
+                  <Login />
+                </RedirectIfAuthed>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <RedirectIfAuthed>
+                  <Register />
+                </RedirectIfAuthed>
+              }
+            />
+            <Route
+              element={
+                <RequireAuth>
+                  <AppShell />
+                </RequireAuth>
+              }
+            >
+              <Route path="/" element={<Dashboard />} />
+            </Route>
             {isDev ? <Route path="/kitchen-sink" element={<KitchenSink />} /> : null}
-            <Route path="*" element={isDev ? <Navigate to="/kitchen-sink" replace /> : <Blank />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </BrowserRouter>
