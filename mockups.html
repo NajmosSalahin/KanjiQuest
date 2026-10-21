@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kanji Garden — Mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Instrument+Sans:wght@400..600&family=Geist+Mono:wght@400..500&family=Noto+Sans+JP:wght@400..500&family=Noto+Serif+JP:wght@400..500&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   DESIGN TOKENS — prompt.md §3 (fixed, do not deviate)
+   ============================================================ */
+:root{
+  --bg-canvas:#FAF7F2; --bg-surface:#FFFFFF; --bg-subtle:#F2EDE4;
+  --ink-primary:#1A1713; --ink-secondary:#4A4438; --ink-muted:#8A8578;
+  --border-subtle:#E5DFD3; --border-strong:#C9C2B2;
+  --accent-vermillion:#C1432E; --accent-vermillion-hover:#A83726;
+  --accent-indigo:#2E4374; --accent-indigo-hover:#24365C;
+  --success-matcha:#6B8E4E; --warning-persimmon:#D9772E;
+  --danger-crimson:#B33A3A; --focus-ring:#C1432E;
+
+  --font-display:'Fraunces',Georgia,serif;
+  --font-body:'Instrument Sans',system-ui,sans-serif;
+  --font-mono:'Geist Mono',ui-monospace,monospace;
+  --font-jp-ui:'Noto Sans JP',sans-serif;
+  --font-jp-serif:'Noto Serif JP',serif;
+
+  --text-xs:.75rem;   --text-sm:.875rem;  --text-base:1rem;   --text-lg:1.125rem;
+  --text-xl:1.375rem; --text-2xl:1.75rem; --text-3xl:2.25rem; --text-4xl:3rem;
+  --text-kanji-xl:6rem; --text-kanji-2xl:10rem;
+
+  --shadow-sm:0 1px 2px rgba(26,23,19,.04);
+  --shadow-md:0 2px 6px rgba(26,23,19,.06);
+  --shadow-lg:0 4px 12px rgba(26,23,19,.08);
+
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --ease-in:cubic-bezier(.4,0,1,1);
+  --duration-fast:120ms; --duration-normal:220ms;
+  --duration-slow:380ms; --duration-celebration:800ms;
+
+  --radius-control:6px; --radius-card:8px; --radius-modal:12px;
+}
+[data-theme="dark"]{
+  --bg-canvas:#15130F; --bg-surface:#1F1C17; --bg-subtle:#2A2620;
+  --ink-primary:#F5F0E6; --ink-secondary:#C9C2B2; --ink-muted:#8A8578;
+  --border-subtle:#2E2A23; --border-strong:#4A4438;
+  --accent-vermillion:#E05A3F; --accent-vermillion-hover:#F06B50;
+  --accent-indigo:#6B8EC4; --accent-indigo-hover:#8AABDB;
+  --success-matcha:#8FBF70; --warning-persimmon:#E8944A;
+  --danger-crimson:#D95A5A; --focus-ring:#E05A3F;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg-canvas); color:var(--ink-secondary);
+  font-family:var(--font-body); font-size:var(--text-base); line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;color:var(--ink-primary)}
+h1{font-family:var(--font-display);font-weight:600;font-size:var(--text-3xl);line-height:2.5rem}
+h2{font-family:var(--font-display);font-weight:500;font-size:var(--text-lg);line-height:1.75rem}
+p{margin:0}
+button{font-family:var(--font-body);cursor:pointer}
+a{color:var(--accent-vermillion);text-decoration:none}
+ruby rt{
+  font-size:.5em; color:var(--ink-muted); font-family:var(--font-jp-ui);
+  font-weight:400; letter-spacing:.02em;
+}
+:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.jp-serif{font-family:var(--font-jp-serif)}
+.jp-ui{font-family:var(--font-jp-ui)}
+.mono{font-family:var(--font-mono)}
+.muted{color:var(--ink-muted)}
+
+/* ============================================================
+   DEV CHROME (mockup switcher — not part of the app)
+   ============================================================ */
+.devbar{
+  position:sticky;top:0;z-index:50;display:flex;gap:16px;align-items:center;
+  padding:8px 16px;background:var(--bg-subtle);
+  border-bottom:1px solid var(--border-subtle);
+}
+.devbar .label{font-family:var(--font-mono);font-size:var(--text-xs);color:var(--ink-muted);letter-spacing:.05em;text-transform:uppercase}
+.devbar .spacer{flex:1}
+.seg{display:flex;gap:4px}
+.seg button{
+  background:transparent;border:1px solid transparent;border-radius:var(--radius-control);
+  padding:5px 12px;font-size:var(--text-sm);font-weight:500;color:var(--ink-secondary);
+  transition:background var(--duration-fast) var(--ease-out);
+}
+.seg button:hover{background:var(--bg-surface);border-color:var(--border-subtle)}
+.seg button.active{color:var(--ink-primary);background:var(--bg-surface);border-color:var(--border-strong)}
+.screen{display:none}
+.screen.active{display:block}
+
+/* ============================================================
+   GLOBAL CHROME — prompt.md §7
+   ============================================================ */
+.topnav{
+  border-bottom:1px solid var(--border-subtle);background:var(--bg-canvas);
+}
+.topnav-inner{
+  max-width:1200px;margin:0 auto;padding:0 32px;height:64px;
+  display:flex;align-items:center;gap:24px;
+}
+.wordmark{display:flex;align-items:baseline;gap:8px}
+.wordmark .name{font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--ink-primary)}
+.wordmark .tag{font-family:var(--font-jp-serif);font-size:12px;color:var(--ink-muted)}
+.navlinks{flex:1;display:flex;justify-content:center;gap:28px}
+.navlinks a{
+  font-size:var(--text-sm);font-weight:500;color:var(--ink-secondary);
+  padding-bottom:8px;border-bottom:2px solid transparent;
+  transition:color var(--duration-fast) var(--ease-out);
+}
+.navlinks a:hover{color:var(--ink-primary)}
+.navlinks a.active{color:var(--ink-primary);border-bottom-color:var(--accent-vermillion)}
+.navright{display:flex;align-items:center;gap:16px}
+.streak-pill{
+  display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;
+  border:1px solid var(--border-subtle);border-radius:9999px;background:var(--bg-surface);
+  font-family:var(--font-mono);font-size:var(--text-sm);color:var(--ink-primary);
+}
+.nav-xp{font-family:var(--font-mono);font-size:14px;color:var(--ink-secondary)}
+.avatar{
+  border-radius:9999px;background:var(--bg-subtle);border:1px solid var(--border-strong);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:var(--ink-secondary);flex:none;
+}
+.avatar.s32{width:32px;height:32px}
+.avatar.s28{width:28px;height:28px}
+.avatar.s128{width:128px;height:128px;font-size:var(--text-2xl)}
+.hamburger{display:none;background:none;border:none;color:var(--ink-primary);padding:4px}
+.page{max-width:1200px;margin:0 auto;padding:32px 32px 64px}
+
+/* ============================================================
+   PRIMITIVES
+   ============================================================ */
+.card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-card);padding:24px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-size:var(--text-sm);font-weight:500;border-radius:var(--radius-control);
+  padding:8px 16px;border:1px solid transparent;
+  transition:background var(--duration-fast) var(--ease-out),border-color var(--duration-fast) var(--ease-out),color var(--duration-fast) var(--ease-out);
+}
+.btn-primary{background:var(--accent-vermillion);color:#fff}
+.btn-primary:hover{background:var(--accent-vermillion-hover)}
+.btn-outline{background:var(--bg-surface);border-color:var(--border-subtle);color:var(--ink-primary)}
+.btn-outline:hover{border-color:var(--accent-vermillion);color:var(--accent-vermillion)}
+.icon{stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.icon-line{stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* progress bar (4px) */
+.pbar{height:4px;background:var(--border-subtle);border-radius:9999px;overflow:hidden}
+.pbar > i{display:block;height:100%;background:var(--accent-indigo);border-radius:9999px}
+
+/* coin + quest bits */
+.coin{width:14px;height:14px;flex:none}
+.reward{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:var(--text-xs);color:var(--ink-muted)}
+
+/* ============================================================
+   7.1 DASHBOARD
+   ============================================================ */
+.dash{max-width:720px;margin:0 auto}
+.dash-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px}
+.dash-header .date{font-size:var(--text-sm);color:var(--ink-muted)}
+.dash .card + .card,.dash .card + .section,.dash .section + .section{margin-top:16px}
+.section{margin-top:32px}
+
+.streak-card{display:flex;align-items:center;gap:24px;position:relative}
+.streak-leaf{width:32px;height:32px;flex:none;color:var(--success-matcha)}
+.streak-count{display:flex;align-items:baseline;gap:8px}
+.streak-count .num{font-family:var(--font-mono);font-size:28px;font-weight:500;color:var(--ink-primary)}
+.streak-count .lbl{font-size:var(--text-sm);color:var(--ink-muted)}
+.dots7{margin-left:auto;display:flex;gap:16px}
+.dots7 .col{display:flex;flex-direction:column;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:9999px;border:1.5px solid var(--border-strong);background:transparent}
+.dot.on{background:var(--success-matcha);border-color:var(--success-matcha)}
+.dots7 .day{font-family:var(--font-mono);font-size:10px;color:var(--ink-muted)}
+.milestone{margin-top:20px}
+.milestone .mrow{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:var(--text-xs);color:var(--ink-muted);margin-bottom:6px}
+.milestone .bar{height:1px;background:var(--border-subtle);position:relative}
+.milestone .bar > i{position:absolute;left:0;top:0;height:1px;background:var(--accent-vermillion)}
+
+.goal-card{display:flex;align-items:center;gap:24px}
+.ring{width:64px;height:64px;flex:none}
+.ring .track{stroke:var(--border-subtle)}
+.ring .fill{stroke:var(--accent-vermillion);stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%}
+.ring text.num{font-family:var(--font-mono);font-size:20px;font-weight:500;fill:var(--ink-primary)}
+.ring text.lbl{font-family:var(--font-body);font-size:9px;fill:var(--ink-muted)}
+.goal-label{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted)}
+.goal-value{font-family:var(--font-mono);font-size:var(--text-lg);color:var(--ink-primary);margin-top:4px}
+
+.due-card{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.due-count{font-family:var(--font-display);font-weight:700;font-size:var(--text-4xl);line-height:1;color:var(--ink-primary)}
+.due-sub{font-size:var(--text-sm);color:var(--ink-secondary);margin-top:4px}
+
+.section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+.quest{display:flex;align-items:center;gap:16px;padding:12px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-card)}
+.quest + .quest{margin-top:8px}
+.quest .qicon{width:20px;height:20px;flex:none;color:var(--accent-vermillion)}
+.quest .qbody{flex:1;min-width:0}
+.quest .qtitle{font-size:var(--text-sm);font-weight:500;color:var(--ink-primary);margin-bottom:6px}
+.quest .qreward{display:flex;align-items:center;gap:12px;font-family:var(--font-mono);font-size:var(--text-xs);color:var(--ink-muted);white-space:nowrap}
+.quest.done{background:var(--bg-subtle)}
+.quest.done .qtitle{color:var(--ink-muted);text-decoration:line-through}
+.quest.done .qcheck{color:var(--success-matcha);display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:var(--text-xs);white-space:nowrap}
+.quest .qcoins{display:flex;align-items:center;gap:4px}
+
+.lb-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:var(--radius-control)}
+.lb-row + .lb-row{margin-top:2px}
+.lb-row .rank{width:24px;font-family:var(--font-mono);font-size:var(--text-sm);color:var(--ink-muted)}
+.lb-row .who{flex:1;min-width:0}
+.lb-row .nm{font-size:var(--text-sm);font-weight:500;color:var(--ink-primary)}
+.lb-row .ttl{font-size:var(--text-xs);color:var(--ink-muted)}
+.lb-row .xp{font-family:var(--font-mono);font-size:var(--text-sm);color:var(--ink-secondary)}
+.lb-row.you{background:var(--bg-subtle)}
+.lb-row .youtag{
+  font-family:var(--font-mono);font-size:10px;color:var(--accent-indigo);
+  border:1px solid var(--accent-indigo);border-radius:9999px;padding:1px 8px;margin-left:8px;
+}
+
+/* ============================================================
+   7.2 REVIEW SESSION (revealed)
+   ============================================================ */
+.review-wrap{max-width:640px;margin:0 auto;padding-top:96px}
+.review-top{display:flex;align-items:center;justify-content:space-between;height:32px;margin-bottom:24px}
+.review-top .counter{font-family:var(--font-mono);font-size:var(--text-sm);color:var(--ink-muted)}
+.iconbtn{background:none;border:none;color:var(--ink-secondary);padding:6px;border-radius:var(--radius-control);display:inline-flex}
+.iconbtn:hover{color:var(--ink-primary);background:var(--bg-subtle)}
+.review-progress{margin-bottom:48px}
+.review-progress .pbar > i{background:var(--accent-vermillion)}
+.card-face{min-height:8rem;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.card-face .kanji{font-family:var(--font-jp-serif);font-weight:400;font-size:var(--text-kanji-xl);line-height:1;color:var(--ink-primary)}
+.answer-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-card);padding:20px}
+.meanings{font-size:var(--text-lg);font-weight:500;color:var(--ink-primary);margin-bottom:20px}
+.reading-group{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+.reading-group .rlabel{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-muted);width:32px;flex:none}
+.reading-group .rvals{display:flex;flex-wrap:wrap;gap:16px;align-items:baseline}
+.reading-item{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-jp-ui);font-size:var(--text-base);color:var(--ink-primary)}
+.reading-item .spk{width:14px;height:14px;color:var(--ink-muted);opacity:.7}
+.example{margin-top:20px;padding-top:16px;border-top:1px solid var(--border-subtle)}
+.example .w{font-family:var(--font-jp-serif);font-size:var(--text-xl);color:var(--ink-primary)}
+.example .r{font-size:var(--text-sm);color:var(--ink-muted);font-family:var(--font-jp-ui)}
+.example .m{font-size:var(--text-sm);color:var(--ink-secondary);margin-top:2px}
+.mnemonic{margin-top:16px;padding-top:16px;border-top:1px solid var(--border-subtle);font-size:var(--text-sm);color:var(--ink-secondary)}
+.mnemonic .lead{
+  font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;
+  color:var(--accent-vermillion);font-weight:600;margin-right:6px;
+}
+.mnemonic em{font-style:italic}
+.ratings{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:20px}
+.rating{
+  background:var(--bg-surface);border:1px solid;border-radius:var(--radius-control);
+  padding:12px 0;display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:var(--text-sm);font-weight:500;
+  transition:background var(--duration-normal) var(--ease-out),color var(--duration-normal) var(--ease-out);
+}
+.rating .kbd{font-family:var(--font-mono);font-size:10px;color:var(--ink-muted);transition:color var(--duration-normal) var(--ease-out)}
+.rating.again{border-color:var(--danger-crimson);color:var(--danger-crimson)}
+.rating.hard{border-color:var(--warning-persimmon);color:var(--warning-persimmon)}
+.rating.good{border-color:var(--success-matcha);color:var(--success-matcha)}
+.rating.easy{border-color:var(--accent-indigo);color:var(--accent-indigo)}
+.rating.filled{color:#fff}
+.rating.filled .kbd{color:rgba(255,255,255,.75)}
+.rating.again.filled{background:var(--danger-crimson)}
+.rating.hard.filled{background:var(--warning-persimmon)}
+.rating.good.filled{background:var(--success-matcha)}
+.rating.easy.filled{background:var(--accent-indigo)}
+.kbd-footer{
+  margin-top:24px;text-align:center;font-family:var(--font-mono);
+  font-size:var(--text-xs);color:var(--ink-muted);
+}
+
+/* ============================================================
+   7.4 KANJI DETAIL
+   ============================================================ */
+.detail{display:grid;grid-template-columns:60fr 40fr;gap:32px;align-items:start}
+.backlink{font-size:var(--text-sm);color:var(--ink-muted);display:inline-block;margin-bottom:8px}
+.backlink:hover{color:var(--ink-secondary)}
+.big-kanji{
+  font-family:var(--font-jp-serif);font-weight:400;font-size:var(--text-kanji-2xl);
+  line-height:1;color:var(--ink-primary);text-align:center;padding:48px 0;
+}
+.meta-row{display:flex;justify-content:center;gap:12px;font-size:var(--text-sm);color:var(--ink-muted);margin-bottom:24px}
+.stroke-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.stroke-controls{display:flex;align-items:center;gap:8px;color:var(--ink-muted)}
+.stroke-controls .speed{
+  font-family:var(--font-mono);font-size:var(--text-xs);border:1px solid var(--border-subtle);
+  background:var(--bg-surface);color:var(--ink-secondary);border-radius:var(--radius-control);padding:3px 8px;
+}
+.stroke-controls .speed.slow{border-color:var(--accent-indigo);color:var(--accent-indigo)}
+.stroke-svg{display:block;margin:0 auto;width:240px;height:240px}
+.stroke-svg path{
+  stroke:var(--ink-primary);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:1;stroke-dashoffset:0;
+}
+.stroke-svg path.pending{stroke:var(--ink-muted)}
+.stroke-svg path.current{stroke:var(--accent-vermillion)}
+.stroke-svg text{font-family:var(--font-mono);font-size:8px;fill:var(--ink-muted)}
+.readings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.reading-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-card);padding:16px}
+.reading-card .rhead{font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-muted);margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;font-family:var(--font-jp-ui);
+  font-size:var(--text-xl);color:var(--ink-primary);
+  background:var(--bg-subtle);border:1px solid var(--border-subtle);
+  border-radius:var(--radius-control);padding:4px 10px;
+}
+.chip .spk{width:14px;height:14px;color:var(--ink-muted);opacity:0;transition:opacity var(--duration-fast) var(--ease-out)}
+.chip:hover .spk{opacity:1}
+.block{margin-top:32px}
+.block h2{margin-bottom:12px}
+.word-card{
+  display:flex;align-items:baseline;gap:16px;background:var(--bg-surface);
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);padding:16px;
+}
+.word-card + .word-card{margin-top:8px}
+.word-card .w{font-family:var(--font-jp-serif);font-size:var(--text-2xl);color:var(--ink-primary)}
+.word-card .r{font-family:var(--font-jp-ui);font-size:var(--text-sm);color:var(--ink-muted)}
+.word-card .m{font-size:var(--text-sm);color:var(--ink-secondary);flex:1}
+.badge{
+  font-size:var(--text-xs);background:var(--bg-subtle);border:1px solid var(--border-subtle);
+  border-radius:9999px;padding:2px 10px;color:var(--ink-muted);font-family:var(--font-mono);
+}
+.sentence-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-card);padding:20px;position:relative}
+.sentence-card .ja{font-family:var(--font-jp-serif);font-size:var(--text-lg);color:var(--ink-primary);padding-right:32px}
+.sentence-card .en{font-size:var(--text-sm);color:var(--ink-secondary);margin-top:8px}
+.sentence-card .spk{position:absolute;top:16px;right:16px;color:var(--ink-muted);background:none;border:none;padding:4px}
+.mnemonic-block{
+  background:var(--bg-subtle);border-left:2px solid var(--accent-vermillion);
+  padding:16px;font-size:var(--text-sm);color:var(--ink-secondary);font-style:italic;
+}
+.side{position:sticky;top:88px;display:flex;flex-direction:column;gap:16px}
+.btn-block{width:100%}
+.side-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-card);padding:20px}
+.side-card h2{margin-bottom:4px}
+.rad-item{display:flex;gap:16px;padding:16px 0}
+.rad-item + .rad-item{border-top:1px solid var(--border-subtle)}
+.rad-item .ch{font-family:var(--font-jp-serif);font-size:var(--text-3xl);line-height:1.2;color:var(--ink-primary)}
+.rad-item .rm{font-size:var(--text-sm);color:var(--ink-primary);font-weight:500}
+.rad-item .mn{font-size:var(--text-sm);color:var(--ink-secondary);margin-top:2px}
+.rel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rel-cell{
+  background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  padding:12px 4px;text-align:center;transition:border-color var(--duration-fast) var(--ease-out),box-shadow var(--duration-fast) var(--ease-out);
+}
+.rel-cell:hover{border-color:var(--border-strong);box-shadow:var(--shadow-sm)}
+.rel-cell .k{font-family:var(--font-jp-serif);font-size:var(--text-2xl);color:var(--ink-primary);display:block}
+.rel-cell .m{font-size:10px;color:var(--ink-muted);display:block;margin-top:2px}
+
+/* ============================================================
+   MOBILE CHROME (<768px)
+   ============================================================ */
+.bottom-tabs{display:none}
+@media (max-width:767px){
+  .navlinks{display:none}
+  .hamburger{display:inline-flex}
+  .topnav-inner{padding:0 16px;height:56px;justify-content:space-between}
+  .nav-xp,.streak-pill{display:none}
+  .page{padding:24px 16px 96px}
+  .detail{grid-template-columns:1fr}
+  .readings-grid{grid-template-columns:1fr}
+  .ratings{grid-template-columns:1fr 1fr}
+  .review-wrap{padding-top:32px}
+  .streak-card{flex-wrap:wrap}
+  .dots7{margin-left:0}
+  .bottom-tabs{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:var(--bg-surface);border-top:1px solid var(--border-subtle);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .bottom-tabs a{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:8px 0 6px;color:var(--ink-muted);font-size:10px;font-weight:500;
+  }
+  .bottom-tabs a.active{color:var(--accent-vermillion)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== dev chrome: screen switcher (not part of the app) ===== -->
+<div class="devbar">
+  <span class="label">Kanji Garden — mockups</span>
+  <div class="seg" role="tablist" aria-label="Mockup screens">
+    <button class="active" data-screen="dashboard">Dashboard</button>
+    <button data-screen="review">Review (revealed)</button>
+    <button data-screen="detail">Kanji detail</button>
+  </div>
+  <span class="spacer"></span>
+  <div class="seg">
+    <button id="themeToggle" aria-label="Toggle color theme">Dark</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     SCREEN 1 — DASHBOARD (prompt.md §7.1)
+     ============================================================ -->
+<section id="screen-dashboard" class="screen active" aria-label="Dashboard mockup">
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <div class="wordmark"><span class="name">Kanji Garden</span><span class="tag">植物</span></div>
+      <div class="navlinks">
+        <a href="#" class="active" aria-current="page">Dashboard</a>
+        <a href="#">Learn</a><a href="#">Review</a><a href="#">Quiz</a><a href="#">Stats</a>
+      </div>
+      <div class="navright">
+        <span class="streak-pill">
+          <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-3 7-7 0-3-2-5-4-7-1 3-3 4-3 4 0-4-3-7-6-8 0 4-1 8-1 11 0 4 3 7 7 7z"/></svg>
+          20
+        </span>
+        <span class="nav-xp">2,905</span>
+        <div class="avatar s32" aria-label="Profile avatar">AU</div>
+        <button class="hamburger" aria-label="Open menu">
+          <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="dash">
+      <!-- Header row -->
+      <div class="dash-header">
+        <h1>Today</h1>
+        <span class="date">Wednesday, March 12</span>
+      </div>
+
+      <!-- Streak card -->
+      <div class="card streak-card">
+        <svg class="streak-leaf" viewBox="0 0 32 32" aria-label="Streak: small branch tier" role="img">
+          <!-- small branch (tier 14–29): stem + 3 leaves, filled matcha -->
+          <path d="M6 27 C12 22 18 16 26 7" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <path d="M13 20 C11 15 13 11 18 10 C19 15 17 19 13 20 Z" fill="currentColor"/>
+          <path d="M19 14 C18 9 21 6 25 6 C25 11 23 14 19 14 Z" fill="currentColor"/>
+          <path d="M9 25 C7 21 8 18 12 17 C13 21 12 24 9 25 Z" fill="currentColor"/>
+        </svg>
+        <div class="streak-count">
+          <span class="num">20</span>
+          <span class="lbl">day streak</span>
+        </div>
+        <div class="dots7" aria-label="Last seven days: reviewed Monday through Wednesday">
+          <div class="col"><span class="dot on"></span><span class="day">M</span></div>
+          <div class="col"><span class="dot on"></span><span class="day">T</span></div>
+          <div class="col"><span class="dot on"></span><span class="day">W</span></div>
+          <div class="col"><span class="dot"></span><span class="day">T</span></div>
+          <div class="col"><span class="dot"></span><span class="day">F</span></div>
+          <div class="col"><span class="dot"></span><span class="day">S</span></div>
+          <div class="col"><span class="dot"></span><span class="day">S</span></div>
+        </div>
+        <div class="milestone" style="position:absolute;left:24px;right:24px;bottom:24px;">
+          <div class="mrow"><span>20 / 30</span><span>10 days to Sakura.</span></div>
+          <div class="bar"><i style="width:66%"></i></div>
+        </div>
+        <div style="height:36px"></div>
+      </div>
+
+      <!-- Daily goal card -->
+      <div class="card goal-card">
+        <svg class="ring" viewBox="0 0 64 64" role="img" aria-label="Daily goal: 50 of 100 XP">
+          <circle class="track" cx="32" cy="32" r="27" fill="none" stroke-width="5"/>
+          <circle class="fill" cx="32" cy="32" r="27" fill="none" stroke-width="5"
+                  stroke-dasharray="169.6" stroke-dashoffset="84.8"/>
+          <text class="num" x="32" y="33" text-anchor="middle" dominant-baseline="middle">50</text>
+          <text class="lbl" x="32" y="45" text-anchor="middle">XP</text>
+        </svg>
+        <div>
+          <div class="goal-label">Daily goal</div>
+          <div class="goal-value">50 / 100 XP</div>
+        </div>
+      </div>
+
+      <!-- Due reviews card -->
+      <div class="card due-card">
+        <div>
+          <div class="due-count">17</div>
+          <div class="due-sub">due now</div>
+        </div>
+        <button class="btn btn-primary">
+          Start review
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- Daily quests -->
+      <div class="section">
+        <div class="section-head">
+          <h2>Daily quests</h2>
+          <span class="mono muted" style="font-size:var(--text-xs)">Resets in 6h 42m</span>
+        </div>
+
+        <div class="quest">
+          <svg class="qicon icon-line" viewBox="0 0 20 20" aria-hidden="true">
+            <rect x="3" y="4" width="11" height="14" rx="1.5"/><path d="M7 2h8a2 2 0 0 1 2 2v10"/>
+          </svg>
+          <div class="qbody">
+            <div class="qtitle">Review 10 cards</div>
+            <div class="pbar"><i style="width:60%"></i></div>
+          </div>
+          <div class="qreward">
+            <span>+30 XP</span>
+            <span class="qcoins">
+              <svg class="coin icon-line" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>
+              10
+            </span>
+          </div>
+        </div>
+
+        <div class="quest">
+          <svg class="qicon icon-line" viewBox="0 0 20 20" aria-hidden="true">
+            <circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.5"/><path d="M10 1.5v3M10 15.5v3M1.5 10h3M15.5 10h3"/>
+          </svg>
+          <div class="qbody">
+            <div class="qtitle">Get 5 answers correct in a row</div>
+            <div class="pbar"><i style="width:80%"></i></div>
+          </div>
+          <div class="qreward">
+            <span>+40 XP</span>
+            <span class="qcoins">
+              <svg class="coin icon-line" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>
+              12
+            </span>
+          </div>
+        </div>
+
+        <div class="quest done">
+          <svg class="qicon icon-line" viewBox="0 0 20 20" aria-hidden="true" style="color:var(--success-matcha)">
+            <path d="M10 17V9"/><path d="M10 11C7 11 5 9 5 6c3 0 5 2 5 5z"/><path d="M10 11c3 0 5-2 5-5-3 0-5 2-5 5z"/>
+          </svg>
+          <div class="qbody">
+            <div class="qtitle">Learn 3 new kanji</div>
+            <div class="qcheck">
+              <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              30 XP
+            </div>
+          </div>
+          <div class="qreward">
+            <span class="qcoins">
+              <svg class="coin icon-line" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>
+              10
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini leaderboard -->
+      <div class="section">
+        <div class="section-head">
+          <h2>This week</h2>
+          <a href="#" style="font-size:var(--text-sm)">Full leaderboard →</a>
+        </div>
+        <div class="lb-row">
+          <span class="rank">1</span>
+          <div class="avatar s28">RK</div>
+          <div class="who"><div class="nm">Rina Kobayashi</div><div class="ttl">The Diligent</div></div>
+          <span class="xp">4,120</span>
+        </div>
+        <div class="lb-row">
+          <span class="rank">2</span>
+          <div class="avatar s28">ST</div>
+          <div class="who"><div class="nm">Sora Tanaka</div><div class="ttl">Canopy</div></div>
+          <span class="xp">3,780</span>
+        </div>
+        <div class="lb-row you">
+          <span class="rank">3</span>
+          <div class="avatar s28">AU</div>
+          <div class="who"><div class="nm">Aurnob<span class="youtag">you</span></div><div class="ttl">Branch</div></div>
+          <span class="xp">2,905</span>
+        </div>
+        <div class="lb-row">
+          <span class="rank">4</span>
+          <div class="avatar s28">MF</div>
+          <div class="who"><div class="nm">Mei Fujita</div><div class="ttl">Thicket</div></div>
+          <span class="xp">2,540</span>
+        </div>
+        <div class="lb-row">
+          <span class="rank">5</span>
+          <div class="avatar s28">KI</div>
+          <div class="who"><div class="nm">Ken Ito</div><div class="ttl">Sprout</div></div>
+          <span class="xp">2,315</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-tabs" aria-label="Primary">
+    <a href="#" class="active"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg>Home</a>
+    <a href="#"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M9 5v14"/></svg>Learn</a>
+    <a href="#"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>Review</a>
+    <a href="#"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Stats</a>
+    <a href="#"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+  </nav>
+</section>
+
+<!-- ============================================================
+     SCREEN 2 — REVIEW SESSION, REVEALED (prompt.md §7.2)
+     ============================================================ -->
+<section id="screen-review" class="screen" aria-label="Review session mockup">
+  <div class="page" style="padding-top:0">
+    <div class="review-wrap">
+      <!-- Distraction-free top: back · counter · shortcuts -->
+      <div class="review-top">
+        <button class="iconbtn" aria-label="Back to dashboard">
+          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <span class="counter">4 / 17</span>
+        <button class="iconbtn" aria-label="Keyboard shortcuts">
+          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+        </button>
+      </div>
+
+      <!-- Progress -->
+      <div class="review-progress"><div class="pbar"><i style="width:23%"></i></div></div>
+
+      <!-- Card back -->
+      <div class="card-face"><span class="kanji">明</span></div>
+
+      <div class="answer-card">
+        <div class="meanings">bright · light</div>
+
+        <div class="reading-group">
+          <span class="rlabel">On</span>
+          <div class="rvals">
+            <span class="reading-item"><ruby>明<rt>メイ</rt></ruby>
+              <svg class="spk icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+            </span>
+            <span class="reading-item"><ruby>明<rt>ミョウ</rt></ruby>
+              <svg class="spk icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+            </span>
+          </div>
+        </div>
+
+        <div class="reading-group">
+          <span class="rlabel">Kun</span>
+          <div class="rvals">
+            <span class="reading-item"><ruby>明<rt>あか.るい</rt></ruby>
+              <svg class="spk icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+            </span>
+            <span class="reading-item"><ruby>明<rt>あき.らか</rt></ruby>
+              <svg class="spk icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+            </span>
+          </div>
+        </div>
+
+        <div class="example">
+          <div class="w">明日</div>
+          <div class="r">あした</div>
+          <div class="m">tomorrow</div>
+        </div>
+
+        <div class="mnemonic">
+          <span class="lead">Remember:</span>
+          <em>The sun and the moon side by side — bright twice a day, and clear as day and night.</em>
+        </div>
+      </div>
+
+      <!-- Rating buttons -->
+      <div class="ratings">
+        <button class="rating again">Again<span class="kbd">1</span></button>
+        <button class="rating hard">Hard<span class="kbd">2</span></button>
+        <button class="rating good">Good<span class="kbd">3</span></button>
+        <button class="rating easy">Easy<span class="kbd">4</span></button>
+      </div>
+
+      <div class="kbd-footer">Space to reveal · 1–4 to rate · U to undo · S to skip · X to suspend</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 3 — KANJI DETAIL (prompt.md §7.4)
+     ============================================================ -->
+<section id="screen-detail" class="screen" aria-label="Kanji detail mockup">
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <div class="wordmark"><span class="name">Kanji Garden</span><span class="tag">植物</span></div>
+      <div class="navlinks">
+        <a href="#">Dashboard</a>
+        <a href="#" class="active" aria-current="page">Learn</a>
+        <a href="#">Review</a><a href="#">Quiz</a><a href="#">Stats</a>
+      </div>
+      <div class="navright">
+        <span class="streak-pill">
+          <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-3 7-7 0-3-2-5-4-7-1 3-3 4-3 4 0-4-3-7-6-8 0 4-1 8-1 11 0 4 3 7 7 7z"/></svg>
+          20
+        </span>
+        <span class="nav-xp">2,905</span>
+        <div class="avatar s32" aria-label="Profile avatar">AU</div>
+        <button class="hamburger" aria-label="Open menu">
+          <svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page">
+    <div class="detail">
+      <!-- LEFT COLUMN -->
+      <div>
+        <a href="#" class="backlink">← Back to Learn</a>
+
+        <div class="big-kanji">明</div>
+
+        <div class="meta-row">
+          <span>8 strokes</span>
+          <span>·</span>
+          <span>Radical: 日</span>
+        </div>
+
+        <!-- Stroke order card -->
+        <div class="card">
+          <div class="stroke-card-head">
+            <h2>Stroke order</h2>
+            <div class="stroke-controls">
+              <button class="iconbtn" id="strokePlay" aria-label="Play stroke animation">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8z" fill="currentColor" stroke="none"/></svg>
+              </button>
+              <button class="iconbtn" id="strokePause" aria-label="Pause stroke animation">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="4" height="16" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" fill="currentColor" stroke="none"/></svg>
+              </button>
+              <button class="speed" id="strokeSpeed" aria-label="Toggle animation speed">1× / 0.5×</button>
+              <button class="iconbtn" id="strokeReset" aria-label="Reset stroke animation">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- 明 = 日 (strokes 1–4) + 月 (strokes 5–8), KanjiVG viewBox 109×109 -->
+          <svg class="stroke-svg" viewBox="0 0 109 109" role="img" aria-label="Stroke order animation for 明, eight strokes">
+            <path id="s1" pathLength="1" d="M20 20 L20 88"/>
+            <path id="s2" pathLength="1" d="M20 20 L48 20 L48 88"/>
+            <path id="s3" pathLength="1" d="M20 54 L48 54"/>
+            <path id="s4" pathLength="1" d="M20 88 L48 88"/>
+            <path id="s5" pathLength="1" d="M64 18 Q61 55 56 90"/>
+            <path id="s6" pathLength="1" d="M64 18 L92 18 L92 86 Q92 91 84 91"/>
+            <path id="s7" pathLength="1" d="M62 45 L92 45"/>
+            <path id="s8" pathLength="1" d="M60 67 L92 67"/>
+            <text x="7" y="22">1</text>
+            <text x="32" y="16">2</text>
+            <text x="7" y="56">3</text>
+            <text x="7" y="84">4</text>
+            <text x="54" y="14">5</text>
+            <text x="76" y="14">6</text>
+            <text x="50" y="47">7</text>
+            <text x="50" y="69">8</text>
+          </svg>
+        </div>
+
+        <!-- Readings -->
+        <div class="readings-grid">
+          <div class="reading-card">
+            <div class="rhead">On-yomi</div>
+            <div class="chips">
+              <span class="chip"><ruby>明<rt>メイ</rt></ruby><svg class="spk icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg></span>
+              <span class="chip"><ruby>明<rt>ミョウ</rt></ruby><svg class="spk icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg></span>
+            </div>
+          </div>
+          <div class="reading-card">
+            <div class="rhead">Kun-yomi</div>
+            <div class="chips">
+              <span class="chip"><ruby>明<rt>あか.るい</rt></ruby><svg class="spk icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg></span>
+              <span class="chip"><ruby>明<rt>あき.らか</rt></ruby><svg class="spk icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Words -->
+        <div class="block">
+          <h2>Words</h2>
+          <div class="word-card">
+            <span class="w">明日</span>
+            <span class="r">あした</span>
+            <span class="m">tomorrow</span>
+            <span class="badge">N5</span>
+          </div>
+          <div class="word-card">
+            <span class="w">説明</span>
+            <span class="r">せつめい</span>
+            <span class="m">explanation</span>
+            <span class="badge">N4</span>
+          </div>
+          <div class="word-card">
+            <span class="w">明白</span>
+            <span class="r">めいはく</span>
+            <span class="m">plain, obvious</span>
+            <span class="badge">N2</span>
+          </div>
+        </div>
+
+        <!-- In context -->
+        <div class="block">
+          <h2>In context</h2>
+          <div class="sentence-card">
+            <button class="spk" aria-label="Play sentence audio">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+            </button>
+            <p class="ja"><ruby>明日<rt>あした</rt></ruby>、<ruby>学校<rt>がっこう</rt></ruby>に行きます。</p>
+            <p class="en">I will go to school tomorrow.</p>
+          </div>
+        </div>
+
+        <!-- Mnemonic -->
+        <div class="block">
+          <h2>Remember it</h2>
+          <div class="mnemonic-block">The sun 日 and the moon 月 stand together — when both are out, everything is bright.</div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN (sticky) -->
+      <div class="side">
+        <button class="btn btn-primary btn-block">Add to review</button>
+
+        <div class="side-card">
+          <h2>Radicals</h2>
+          <div class="rad-item">
+            <span class="ch">日</span>
+            <div>
+              <div class="rm">sun, day</div>
+              <div class="mn">The sun radical — a window framing the light.</div>
+            </div>
+          </div>
+          <div class="rad-item">
+            <span class="ch">月</span>
+            <div>
+              <div class="rm">moon, month</div>
+              <div class="mn">The moon radical — a sliver of night, drawn in four strokes.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-card">
+          <h2>Related kanji</h2>
+          <div class="rel-grid">
+            <a class="rel-cell" href="#"><span class="k">昨</span><span class="m">previous</span></a>
+            <a class="rel-cell" href="#"><span class="k">時</span><span class="m">time</span></a>
+            <a class="rel-cell" href="#"><span class="k">晴</span><span class="m">clear up</span></a>
+            <a class="rel-cell" href="#"><span class="k">星</span><span class="m">star</span></a>
+            <a class="rel-cell" href="#"><span class="k">朝</span><span class="m">morning</span></a>
+            <a class="rel-cell" href="#"><span class="k">期</span><span class="m">period</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-tabs" aria-label="Primary">
+    <a href="#"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21H3z"/></svg>Home</a>
+    <a href="#" class="active"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M9 5v14"/></svg>Learn</a>
+    <a href="#"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>Review</a>
+    <a href="#"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Stats</a>
+    <a href="#"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+  </nav>
+</section>
+
+<script>
+/* ---------- screen switcher ---------- */
+const segButtons = document.querySelectorAll('.devbar .seg [data-screen]');
+const screens = document.querySelectorAll('.screen');
+segButtons.forEach(btn => btn.addEventListener('click', () => {
+  segButtons.forEach(b => b.classList.toggle('active', b === btn));
+  screens.forEach(s => s.classList.toggle('active', s.id === 'screen-' + btn.dataset.screen));
+  window.scrollTo(0, 0);
+}));
+
+/* ---------- theme toggle ---------- */
+const themeBtn = document.getElementById('themeToggle');
+const stored = localStorage.getItem('kg-mock-theme');
+if (stored) document.documentElement.dataset.theme = stored;
+const syncLabel = () => themeBtn.textContent =
+  document.documentElement.dataset.theme === 'dark' ? 'Light' : 'Dark';
+syncLabel();
+themeBtn.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('kg-mock-theme', next);
+  syncLabel();
+});
+
+/* ---------- rating button fill demo (§7.2: 220ms fill, then card out) ---------- */
+document.querySelectorAll('.rating').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.rating').forEach(b => b.classList.remove('filled'));
+  btn.classList.add('filled');
+  setTimeout(() => btn.classList.remove('filled'), 900);
+}));
+
+/* ---------- stroke-order animation demo (§7.4) ---------- */
+const strokeIds = ['s1','s2','s3','s4','s5','s6','s7','s8'];
+const strokePaths = strokeIds.map(id => document.getElementById(id));
+let slow = false, timers = [], running = false;
+
+function setDrawn(path, offset){ path.style.strokeDashoffset = offset; }
+function resetStrokes(){
+  timers.forEach(clearTimeout); timers = []; running = false;
+  strokePaths.forEach(p => {
+    p.classList.remove('pending','current');
+    p.style.transition = 'none';
+    setDrawn(p, 0);
+    void p.getBoundingClientRect(); // flush
+  });
+}
+function playStrokes(){
+  if (running) return;
+  resetStrokes(); running = true;
+  const drawMs = slow ? 800 : 400;   // spec: 400ms draw, 200ms stagger (0.5× doubles)
+  const staggerMs = slow ? 400 : 200;
+  strokePaths.forEach((p, i) => {
+    p.classList.add('pending');
+    timers.push(setTimeout(() => {
+      if (!running) return;
+      strokePaths.forEach(x => x.classList.remove('current'));
+      p.classList.remove('pending');
+      p.classList.add('current');
+      setDrawn(p, 1);
+      p.style.transition = `stroke-dashoffset ${drawMs}ms var(--ease-out)`;
+      requestAnimationFrame(() => setDrawn(p, 0));
+      timers.push(setTimeout(() => p.classList.remove('current'), drawMs));
+    }, i * staggerMs));
+  });
+  timers.push(setTimeout(() => { running = false; }, strokePaths.length * staggerMs + drawMs));
+}
+document.getElementById('strokePlay').addEventListener('click', () => {
+  // if every stroke is drawn, restart; otherwise resume from current state
+  const allDrawn = strokePaths.every(p => p.style.strokeDashoffset === '0' && !p.classList.contains('pending'));
+  if (allDrawn && !running) { resetStrokes(); playStrokes(); }
+  else playStrokes();
+});
+document.getElementById('strokePause').addEventListener('click', () => {
+  running = false; timers.forEach(clearTimeout); timers = [];
+  strokePaths.forEach(p => {
+    const offset = getComputedStyle(p).strokeDashoffset;
+    p.style.transition = 'none';
+    setDrawn(p, offset);
+    p.classList.remove('pending','current');
+  });
+});
+document.getElementById('strokeReset').addEventListener('click', resetStrokes);
+document.getElementById('strokeSpeed').addEventListener('click', (e) => {
+  slow = !slow;
+  e.currentTarget.classList.toggle('slow', slow);
+});
+resetStrokes();
+</script>
+</body>
+</html>
