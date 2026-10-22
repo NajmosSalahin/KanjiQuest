@@ -1,0 +1,1493 @@
+[
+  {
+    "character": "一",
+    "meaning": "one",
+    "mnemonic": "The one radical — a single stroke holding the line.",
+    "strokeCount": 1,
+    "variants": []
+  },
+  {
+    "character": "二",
+    "meaning": "two",
+    "mnemonic": "The two radical — two strokes stacked one over the other.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "丨",
+    "meaning": "line",
+    "mnemonic": "The line radical — a pillar standing straight down.",
+    "strokeCount": 1,
+    "variants": []
+  },
+  {
+    "character": "丶",
+    "meaning": "dot",
+    "mnemonic": "The dot radical — a single drop of rain.",
+    "strokeCount": 1,
+    "variants": []
+  },
+  {
+    "character": "丿",
+    "meaning": "slash",
+    "mnemonic": "The slash radical — a blade sweeping left.",
+    "strokeCount": 1,
+    "variants": []
+  },
+  {
+    "character": "乙",
+    "meaning": "second",
+    "mnemonic": "The second radical — a hook of wind bending the grass.",
+    "strokeCount": 1,
+    "variants": []
+  },
+  {
+    "character": "亅",
+    "meaning": "hook",
+    "mnemonic": "The hook radical — a fishing line curling at the end.",
+    "strokeCount": 1,
+    "variants": []
+  },
+  {
+    "character": "亠",
+    "meaning": "lid",
+    "mnemonic": "The lid radical — a small roof cap over what follows.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "人",
+    "meaning": "person",
+    "mnemonic": "The person radical — someone mid-stride, legs apart.",
+    "strokeCount": 2,
+    "variants": ["亻"]
+  },
+  {
+    "character": "儿",
+    "meaning": "legs",
+    "mnemonic": "The legs radical — two legs planted and ready to run.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "入",
+    "meaning": "enter",
+    "mnemonic": "The enter radical — a wedge slipping through a door.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "八",
+    "meaning": "eight",
+    "mnemonic": "The eight radical — two strokes splitting apart.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "冂",
+    "meaning": "downbox",
+    "mnemonic": "The open-box radical — a frame hanging down from above.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "冖",
+    "meaning": "cover",
+    "mnemonic": "The cover radical — a cloth thrown over everything.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "冫",
+    "meaning": "ice",
+    "mnemonic": "The ice radical — two crystals forming in the cold.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "几",
+    "meaning": "table",
+    "mnemonic": "The table radical — a small stool seen from the side.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "凵",
+    "meaning": "receptacle",
+    "mnemonic": "The receptacle radical — an open mouth waiting to be filled.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "刀",
+    "meaning": "knife",
+    "mnemonic": "The knife radical — a blade with its edge on the left.",
+    "strokeCount": 2,
+    "variants": ["刂"]
+  },
+  {
+    "character": "力",
+    "meaning": "power",
+    "mnemonic": "The power radical — a flexed arm showing its muscle.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "勹",
+    "meaning": "wrap",
+    "mnemonic": "The wrap radical — arms curled around something precious.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "匚",
+    "meaning": "box",
+    "mnemonic": "The box radical — a tray open on one side.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "匸",
+    "meaning": "hidden",
+    "mnemonic": "The hidden radical — a box that closes over what it hides.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "匕",
+    "meaning": "spoon",
+    "mnemonic": "The spoon radical — a ladle dipped and turned.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "十",
+    "meaning": "ten",
+    "mnemonic": "The ten radical — a crossroads counted in full.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "卜",
+    "meaning": "divination",
+    "mnemonic": "The divination radical — a crack spreading across a bone.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "卩",
+    "meaning": "seal",
+    "mnemonic": "The seal radical — a tall stamp pressed into wax.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "厂",
+    "meaning": "cliff",
+    "mnemonic": "The cliff radical — a rock overhang jutting out.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "厶",
+    "meaning": "private",
+    "mnemonic": "The private radical — something coiled up and kept to oneself.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "又",
+    "meaning": "again",
+    "mnemonic": "The again radical — a hand reaching back for more.",
+    "strokeCount": 2,
+    "variants": []
+  },
+  {
+    "character": "口",
+    "meaning": "mouth",
+    "mnemonic": "The mouth radical — lips open, ready to speak.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "囗",
+    "meaning": "enclosure",
+    "mnemonic": "The enclosure radical — a wall drawn all the way around.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "土",
+    "meaning": "earth",
+    "mnemonic": "The earth radical — soil rising from flat ground.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "士",
+    "meaning": "scholar",
+    "mnemonic": "The scholar radical — a tall hat worn by the learned.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "夂",
+    "meaning": "go",
+    "mnemonic": "The go radical — feet turning to walk downhill.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "夊",
+    "meaning": "go slowly",
+    "mnemonic": "The slow-walk radical — a straggler ambling behind.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "夕",
+    "meaning": "evening",
+    "mnemonic": "The evening radical — a sliver of moon at dusk.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "大",
+    "meaning": "big",
+    "mnemonic": "The big radical — a person stretching arms wide.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "女",
+    "meaning": "woman",
+    "mnemonic": "The woman radical — arms folded, kneeling gracefully.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "子",
+    "meaning": "child",
+    "mnemonic": "The child radical — a baby with flailing arms.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "宀",
+    "meaning": "roof",
+    "mnemonic": "The roof radical — a house with its eaves spread wide.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "寸",
+    "meaning": "inch",
+    "mnemonic": "The inch radical — fingers measuring a small distance.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "小",
+    "meaning": "small",
+    "mnemonic": "The small radical — three grains too tiny to hold.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "尢",
+    "meaning": "lame",
+    "mnemonic": "The lame radical — a figure limping on one leg.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "尸",
+    "meaning": "corpse",
+    "mnemonic": "The corpse radical — a body lying on its side.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "屮",
+    "meaning": "sprout",
+    "mnemonic": "The sprout radical — two leaves pushing through soil.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "山",
+    "meaning": "mountain",
+    "mnemonic": "The mountain radical — three peaks against the sky.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "巛",
+    "meaning": "river",
+    "mnemonic": "The river radical — water rushing in three channels.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "工",
+    "meaning": "work",
+    "mnemonic": "The work radical — a carpenter's square between two beams.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "己",
+    "meaning": "self",
+    "mnemonic": "The self radical — a cord coiled into a personal knot.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "巾",
+    "meaning": "cloth",
+    "mnemonic": "The cloth radical — a towel hanging from a peg.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "干",
+    "meaning": "dry",
+    "mnemonic": "The dry radical — a shield raised against the rain.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "幺",
+    "meaning": "tiny",
+    "mnemonic": "The tiny radical — a thread twisted finer than hair.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "广",
+    "meaning": "dotted cliff",
+    "mnemonic": "The dotted-cliff radical — a lean-to shack built against a rock face.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "廴",
+    "meaning": "long stride",
+    "mnemonic": "The long-stride radical — legs stretched into a run.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "廾",
+    "meaning": "two hands",
+    "mnemonic": "The two-hands radical — palms lifted together in offering.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "弓",
+    "meaning": "bow",
+    "mnemonic": "The bow radical — a bowstring drawn and creaking.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "彐",
+    "meaning": "pig snout",
+    "mnemonic": "The pig-snout radical — a snout rooting at the ground.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "弋",
+    "meaning": "shot",
+    "mnemonic": "The shot radical — a stake driven in to tie a target to.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "彡",
+    "meaning": "bristle",
+    "mnemonic": "The bristle radical — three strands of hair or feather.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "彳",
+    "meaning": "step",
+    "mnemonic": "The step radical — the left half of a crossroads.",
+    "strokeCount": 3,
+    "variants": []
+  },
+  {
+    "character": "心",
+    "meaning": "heart",
+    "mnemonic": "The heart radical — a heart with blood pumping through it.",
+    "strokeCount": 4,
+    "variants": ["忄"]
+  },
+  {
+    "character": "戈",
+    "meaning": "spear",
+    "mnemonic": "The spear radical — a halberd planted at an angle.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "戶",
+    "meaning": "door",
+    "mnemonic": "The door radical — one leaf of a double door.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "手",
+    "meaning": "hand",
+    "mnemonic": "The hand radical — a palm with five fingers spread.",
+    "strokeCount": 4,
+    "variants": ["扌"]
+  },
+  {
+    "character": "支",
+    "meaning": "branch",
+    "mnemonic": "The branch radical — a twig held up by a hand.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "攴",
+    "meaning": "tap",
+    "mnemonic": "The tap radical — a hand holding a stick to strike.",
+    "strokeCount": 4,
+    "variants": ["攵"]
+  },
+  {
+    "character": "文",
+    "meaning": "writing",
+    "mnemonic": "The writing radical — calligraphy crossed and ornamented.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "斗",
+    "meaning": "dipper",
+    "mnemonic": "The dipper radical — a measuring ladle tipped to pour.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "斤",
+    "meaning": "axe",
+    "mnemonic": "The axe radical — an axe head biting into wood.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "方",
+    "meaning": "direction",
+    "mnemonic": "The direction radical — a banner pointing the way.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "无",
+    "meaning": "not",
+    "mnemonic": "The not radical — arms limp, nothing left to hold.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "日",
+    "meaning": "sun",
+    "mnemonic": "The sun radical — the sun framed in a window.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "曰",
+    "meaning": "say",
+    "mnemonic": "The say radical — a mouth wider, words coming out.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "月",
+    "meaning": "moon",
+    "mnemonic": "The moon radical — a crescent filling with light.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "木",
+    "meaning": "tree",
+    "mnemonic": "The tree radical — branches above, roots below.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "欠",
+    "meaning": "lack",
+    "mnemonic": "The lack radical — a person yawning for air.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "止",
+    "meaning": "stop",
+    "mnemonic": "The stop radical — a foot planted, going no further.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "歹",
+    "meaning": "death",
+    "mnemonic": "The death radical — cracked bones left on the ground.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "殳",
+    "meaning": "weapon",
+    "mnemonic": "The weapon radical — a hand wielding a hammer.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "毋",
+    "meaning": "mother",
+    "mnemonic": "The mother radical — arms crossed in a firm refusal.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "比",
+    "meaning": "compare",
+    "mnemonic": "The compare radical — two people standing side by side.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "毛",
+    "meaning": "fur",
+    "mnemonic": "The fur radical — hairs curling off a hide.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "氏",
+    "meaning": "clan",
+    "mnemonic": "The clan radical — a banner drooping from a family pole.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "气",
+    "meaning": "air",
+    "mnemonic": "The air radical — steam rising off a cup.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "水",
+    "meaning": "water",
+    "mnemonic": "The water radical — three droplets splashing.",
+    "strokeCount": 4,
+    "variants": ["氵", "氺"]
+  },
+  {
+    "character": "火",
+    "meaning": "fire",
+    "mnemonic": "The fire radical — sparks flying from a flame.",
+    "strokeCount": 4,
+    "variants": ["灬"]
+  },
+  {
+    "character": "爪",
+    "meaning": "claw",
+    "mnemonic": "The claw radical — a bird's talons closing tight.",
+    "strokeCount": 4,
+    "variants": ["爫"]
+  },
+  {
+    "character": "父",
+    "meaning": "father",
+    "mnemonic": "The father radical — two axes crossed, the provider's tools.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "爻",
+    "meaning": "mix",
+    "mnemonic": "The mix radical — twigs woven together for divination.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "爿",
+    "meaning": "split wood",
+    "mnemonic": "The split-wood radical — a log halved down the middle.",
+    "strokeCount": 4,
+    "variants": ["丬"]
+  },
+  {
+    "character": "片",
+    "meaning": "slice",
+    "mnemonic": "The slice radical — one thin board shaved off the log.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "牙",
+    "meaning": "fang",
+    "mnemonic": "The fang radical — interlocking teeth biting down.",
+    "strokeCount": 4,
+    "variants": []
+  },
+  {
+    "character": "牛",
+    "meaning": "cow",
+    "mnemonic": "The cow radical — horns and a head seen from the front.",
+    "strokeCount": 4,
+    "variants": ["牜"]
+  },
+  {
+    "character": "犬",
+    "meaning": "dog",
+    "mnemonic": "The dog radical — a dog with its tail curled up.",
+    "strokeCount": 4,
+    "variants": ["犭"]
+  },
+  {
+    "character": "玄",
+    "meaning": "dark",
+    "mnemonic": "The dark radical — a thread too fine to see, twisting into mystery.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "玉",
+    "meaning": "jade",
+    "mnemonic": "The jade radical — three stones strung on a cord.",
+    "strokeCount": 5,
+    "variants": ["王"]
+  },
+  {
+    "character": "瓜",
+    "meaning": "melon",
+    "mnemonic": "The melon radical — a vine hung with one round fruit.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "瓦",
+    "meaning": "tile",
+    "mnemonic": "The tile radical — roof tiles curved and overlapping.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "甘",
+    "meaning": "sweet",
+    "mnemonic": "The sweet radical — something good held in the mouth.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "生",
+    "meaning": "birth",
+    "mnemonic": "The birth radical — a sprout rising out of the earth.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "用",
+    "meaning": "use",
+    "mnemonic": "The use radical — a frame with boards nailed in, ready to work.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "田",
+    "meaning": "field",
+    "mnemonic": "The field radical — paddies divided by earthen banks.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "疋",
+    "meaning": "bolt of cloth",
+    "mnemonic": "The bolt-of-cloth radical — a leg with a foot, folding fabric at the hem.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "疒",
+    "meaning": "sickness",
+    "mnemonic": "The sickness radical — a patient lying in a sickbed.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "癶",
+    "meaning": "heels",
+    "mnemonic": "The heels radical — two feet spread, walking out.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "白",
+    "meaning": "white",
+    "mnemonic": "The white radical — the sun with extra light pouring off it.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "皮",
+    "meaning": "skin",
+    "mnemonic": "The skin radical — a hide peeled back from the flesh.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "皿",
+    "meaning": "dish",
+    "mnemonic": "The dish radical — a bowl on two little feet.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "目",
+    "meaning": "eye",
+    "mnemonic": "The eye radical — an eye turned on its side, lid to lid.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "矛",
+    "meaning": "spear",
+    "mnemonic": "The spear radical — a javelin with its point at the top.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "矢",
+    "meaning": "arrow",
+    "mnemonic": "The arrow radical — an arrow already loosed.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "石",
+    "meaning": "stone",
+    "mnemonic": "The stone radical — a cliff with one rock fallen at its base.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "示",
+    "meaning": "spirit",
+    "mnemonic": "The spirit radical — an altar with offerings laid out.",
+    "strokeCount": 5,
+    "variants": ["礻"]
+  },
+  {
+    "character": "禾",
+    "meaning": "grain",
+    "mnemonic": "The grain radical — a stalk of rice bending under its own weight.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "穴",
+    "meaning": "cave",
+    "mnemonic": "The cave radical — a roof over an opening dug into the hill.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "立",
+    "meaning": "stand",
+    "mnemonic": "The stand radical — a person planted wide on the ground.",
+    "strokeCount": 5,
+    "variants": []
+  },
+  {
+    "character": "竹",
+    "meaning": "bamboo",
+    "mnemonic": "The bamboo radical — two bamboo leaves drooping from a stalk.",
+    "strokeCount": 6,
+    "variants": ["⺮"]
+  },
+  {
+    "character": "米",
+    "meaning": "rice",
+    "mnemonic": "The rice radical — grains scattered around a center.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "糸",
+    "meaning": "silk",
+    "mnemonic": "The silk radical — a thread knotted and trailing.",
+    "strokeCount": 6,
+    "variants": ["糹", "纟"]
+  },
+  {
+    "character": "缶",
+    "meaning": "jar",
+    "mnemonic": "The jar radical — a clay pot with a lid on top.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "网",
+    "meaning": "net",
+    "mnemonic": "The net radical — a mesh strung out to catch.",
+    "strokeCount": 6,
+    "variants": ["罒"]
+  },
+  {
+    "character": "羊",
+    "meaning": "sheep",
+    "mnemonic": "The sheep radical — horns curling down beside a face.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "羽",
+    "meaning": "feather",
+    "mnemonic": "The feather radical — two wings fanned open.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "老",
+    "meaning": "old",
+    "mnemonic": "The old radical — a figure bent over a long staff.",
+    "strokeCount": 6,
+    "variants": ["耂"]
+  },
+  {
+    "character": "而",
+    "meaning": "and",
+    "mnemonic": "The and radical — a beard combing straight down.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "耒",
+    "meaning": "plow",
+    "mnemonic": "The plow radical — a hand plow with its blade at the bottom.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "耳",
+    "meaning": "ear",
+    "mnemonic": "The ear radical — an ear stretched tall to listen.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "聿",
+    "meaning": "brush",
+    "mnemonic": "The brush radical — a hand pulling a writing brush through a scroll.",
+    "strokeCount": 6,
+    "variants": ["肀"]
+  },
+  {
+    "character": "肉",
+    "meaning": "meat",
+    "mnemonic": "The meat radical — strips of meat stacked between ribs.",
+    "strokeCount": 6,
+    "variants": ["⺼"]
+  },
+  {
+    "character": "臣",
+    "meaning": "minister",
+    "mnemonic": "The minister radical — an eye bowed low before its lord.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "自",
+    "meaning": "self",
+    "mnemonic": "The self radical — a nose, the place breath begins.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "至",
+    "meaning": "arrive",
+    "mnemonic": "The arrive radical — an arrow landing in the earth.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "臼",
+    "meaning": "mortar",
+    "mnemonic": "The mortar radical — two hands working inside a stone bowl.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "舌",
+    "meaning": "tongue",
+    "mnemonic": "The tongue radical — a tongue hanging out of a mouth.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "舛",
+    "meaning": "contrary",
+    "mnemonic": "The contrary radical — two feet stepping against each other.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "舟",
+    "meaning": "boat",
+    "mnemonic": "The boat radical — a boat with its mast across the middle.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "艮",
+    "meaning": "stubborn",
+    "mnemonic": "The stubborn radical — a figure turning its head to look back and refuse.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "色",
+    "meaning": "color",
+    "mnemonic": "The color radical — a person crouching over what they desire.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "艸",
+    "meaning": "grass",
+    "mnemonic": "The grass radical — two sprouts growing side by side.",
+    "strokeCount": 6,
+    "variants": ["艹"]
+  },
+  {
+    "character": "虍",
+    "meaning": "tiger",
+    "mnemonic": "The tiger radical — stripes on a tiger's head and paws.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "虫",
+    "meaning": "insect",
+    "mnemonic": "The insect radical — a worm curling its head up.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "血",
+    "meaning": "blood",
+    "mnemonic": "The blood radical — a dish with one drop of blood in it.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "行",
+    "meaning": "go",
+    "mnemonic": "The go radical — a crossroads with room to walk.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "衣",
+    "meaning": "clothing",
+    "mnemonic": "The clothing radical — a robe with its collar open.",
+    "strokeCount": 6,
+    "variants": ["衤"]
+  },
+  {
+    "character": "襾",
+    "meaning": "west",
+    "mnemonic": "The west radical — a cover clasped down over a box.",
+    "strokeCount": 6,
+    "variants": []
+  },
+  {
+    "character": "見",
+    "meaning": "see",
+    "mnemonic": "The see radical — a big eye standing on legs.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "角",
+    "meaning": "horn",
+    "mnemonic": "The horn radical — a horn with its ridges showing.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "言",
+    "meaning": "speech",
+    "mnemonic": "The speech radical — words rising out of an open mouth.",
+    "strokeCount": 7,
+    "variants": ["訁"]
+  },
+  {
+    "character": "谷",
+    "meaning": "valley",
+    "mnemonic": "The valley radical — water pouring down between cliffs.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "豆",
+    "meaning": "bean",
+    "mnemonic": "The bean radical — a stemmed cup on the table.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "豕",
+    "meaning": "pig",
+    "mnemonic": "The pig radical — a boar bristling from head to tail.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "豸",
+    "meaning": "cat-like",
+    "mnemonic": "The cat-like radical — a lean predator with its spine arched.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "貝",
+    "meaning": "shell",
+    "mnemonic": "The shell radical — a cowrie standing on two little legs, money from the sea.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "赤",
+    "meaning": "red",
+    "mnemonic": "The red radical — a great fire blazing on the ground.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "走",
+    "meaning": "run",
+    "mnemonic": "The run radical — legs striding fast over the earth.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "足",
+    "meaning": "foot",
+    "mnemonic": "The foot radical — a mouth above a stepping foot.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "身",
+    "meaning": "body",
+    "mnemonic": "The body radical — a pregnant figure standing sideways.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "車",
+    "meaning": "car",
+    "mnemonic": "The car radical — a cart seen from above, axle and wheels.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "辛",
+    "meaning": "bitter",
+    "mnemonic": "The bitter radical — a chisel pressed into flesh.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "辰",
+    "meaning": "morning",
+    "mnemonic": "The morning radical — a worm hatching as the rain starts.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "辵",
+    "meaning": "walk",
+    "mnemonic": "The walk radical — a foot at the crossroads, going somewhere.",
+    "strokeCount": 7,
+    "variants": ["辶"]
+  },
+  {
+    "character": "邑",
+    "meaning": "city",
+    "mnemonic": "The city radical — a kneeling person beside a walled town.",
+    "strokeCount": 7,
+    "variants": ["⻏"]
+  },
+  {
+    "character": "酉",
+    "meaning": "wine",
+    "mnemonic": "The wine radical — a jug of sake with its stopper in.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "釆",
+    "meaning": "separate",
+    "mnemonic": "The separate radical — a paw print spreading in three directions.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "里",
+    "meaning": "village",
+    "mnemonic": "The village radical — a field measured into a home.",
+    "strokeCount": 7,
+    "variants": []
+  },
+  {
+    "character": "金",
+    "meaning": "gold",
+    "mnemonic": "The gold radical — metal nuggets buried under the earth.",
+    "strokeCount": 8,
+    "variants": ["钅", "釒"]
+  },
+  {
+    "character": "長",
+    "meaning": "long",
+    "mnemonic": "The long radical — long hair combed out over a person's back.",
+    "strokeCount": 8,
+    "variants": []
+  },
+  {
+    "character": "門",
+    "meaning": "gate",
+    "mnemonic": "The gate radical — two leaves of a great gate standing open.",
+    "strokeCount": 8,
+    "variants": []
+  },
+  {
+    "character": "阜",
+    "meaning": "mound",
+    "mnemonic": "The mound radical — steps carved up a hillside.",
+    "strokeCount": 8,
+    "variants": ["⻖"]
+  },
+  {
+    "character": "隶",
+    "meaning": "slave",
+    "mnemonic": "The slave radical — a hand gripping a tail, taking what is not yours.",
+    "strokeCount": 8,
+    "variants": []
+  },
+  {
+    "character": "隹",
+    "meaning": "old bird",
+    "mnemonic": "The old-bird radical — a short-tailed bird perched and watching.",
+    "strokeCount": 8,
+    "variants": []
+  },
+  {
+    "character": "雨",
+    "meaning": "rain",
+    "mnemonic": "The rain radical — drops falling from a sky-wide cloud.",
+    "strokeCount": 8,
+    "variants": []
+  },
+  {
+    "character": "青",
+    "meaning": "blue",
+    "mnemonic": "The blue radical — plants growing under a clear sky.",
+    "strokeCount": 8,
+    "variants": []
+  },
+  {
+    "character": "非",
+    "meaning": "wrong",
+    "mnemonic": "The wrong radical — two wings beating against each other.",
+    "strokeCount": 8,
+    "variants": []
+  },
+  {
+    "character": "面",
+    "meaning": "face",
+    "mnemonic": "The face radical — a face framed inside a head.",
+    "strokeCount": 9,
+    "variants": []
+  },
+  {
+    "character": "革",
+    "meaning": "leather",
+    "mnemonic": "The leather radical — a hide stretched taut and pinned to dry.",
+    "strokeCount": 9,
+    "variants": []
+  },
+  {
+    "character": "韋",
+    "meaning": "tanned",
+    "mnemonic": "The tanned-leather radical — feet walking around a city wall.",
+    "strokeCount": 9,
+    "variants": []
+  },
+  {
+    "character": "頁",
+    "meaning": "page",
+    "mnemonic": "The page radical — a head bent over a book.",
+    "strokeCount": 9,
+    "variants": []
+  },
+  {
+    "character": "風",
+    "meaning": "wind",
+    "mnemonic": "The wind radical — insects carried on a swirling wind.",
+    "strokeCount": 9,
+    "variants": []
+  },
+  {
+    "character": "飛",
+    "meaning": "fly",
+    "mnemonic": "The fly radical — wings lifting up and away.",
+    "strokeCount": 9,
+    "variants": []
+  },
+  {
+    "character": "食",
+    "meaning": "eat",
+    "mnemonic": "The eat radical — a hunger waiting to be fed.",
+    "strokeCount": 9,
+    "variants": ["飠", "饣"]
+  },
+  {
+    "character": "韭",
+    "meaning": "leek",
+    "mnemonic": "The leek radical — rows of garlic chives rising from one root.",
+    "strokeCount": 9,
+    "variants": []
+  },
+  {
+    "character": "音",
+    "meaning": "sound",
+    "mnemonic": "The sound radical — a note sung above an open mouth.",
+    "strokeCount": 9,
+    "variants": []
+  },
+  {
+    "character": "首",
+    "meaning": "head",
+    "mnemonic": "The head radical — a head with its hair combed.",
+    "strokeCount": 9,
+    "variants": []
+  },
+  {
+    "character": "香",
+    "meaning": "fragrant",
+    "mnemonic": "The fragrant radical — grain and incense, sweet in the air.",
+    "strokeCount": 9,
+    "variants": []
+  },
+  {
+    "character": "馬",
+    "meaning": "horse",
+    "mnemonic": "The horse radical — a horse with its mane and four legs.",
+    "strokeCount": 10,
+    "variants": []
+  },
+  {
+    "character": "髟",
+    "meaning": "hair",
+    "mnemonic": "The hair radical — long hair streaming down the side.",
+    "strokeCount": 10,
+    "variants": []
+  },
+  {
+    "character": "鬲",
+    "meaning": "tripod cauldron",
+    "mnemonic": "The cauldron radical — a three-legged pot standing over a fire.",
+    "strokeCount": 10,
+    "variants": []
+  },
+  {
+    "character": "骨",
+    "meaning": "bone",
+    "mnemonic": "The bone radical — joints stacked along a skeleton's frame.",
+    "strokeCount": 10,
+    "variants": []
+  },
+  {
+    "character": "高",
+    "meaning": "tall",
+    "mnemonic": "The tall radical — a watchtower rising story over story.",
+    "strokeCount": 10,
+    "variants": []
+  },
+  {
+    "character": "鬥",
+    "meaning": "fight",
+    "mnemonic": "The fight radical — two fighters gripping each other's weapons.",
+    "strokeCount": 10,
+    "variants": []
+  },
+  {
+    "character": "鬯",
+    "meaning": "sacrificial wine",
+    "mnemonic": "The sacrificial-wine radical — a jar of ritual wine with herbs floating in it.",
+    "strokeCount": 10,
+    "variants": []
+  },
+  {
+    "character": "鬼",
+    "meaning": "ghost",
+    "mnemonic": "The ghost radical — a demon's head on a crouching body.",
+    "strokeCount": 10,
+    "variants": []
+  },
+  {
+    "character": "魚",
+    "meaning": "fish",
+    "mnemonic": "The fish radical — a fish tail fin over a four-square body.",
+    "strokeCount": 11,
+    "variants": []
+  },
+  {
+    "character": "鳥",
+    "meaning": "bird",
+    "mnemonic": "The bird radical — a bird with its eye and flowing tail feathers.",
+    "strokeCount": 11,
+    "variants": []
+  },
+  {
+    "character": "鹵",
+    "meaning": "salt",
+    "mnemonic": "The salt radical — salt crystals gathered in a basket.",
+    "strokeCount": 11,
+    "variants": []
+  },
+  {
+    "character": "鹿",
+    "meaning": "deer",
+    "mnemonic": "The deer radical — antlers above a running body.",
+    "strokeCount": 11,
+    "variants": []
+  },
+  {
+    "character": "麥",
+    "meaning": "wheat",
+    "mnemonic": "The wheat radical — stalks of wheat with their feet pulled along.",
+    "strokeCount": 11,
+    "variants": []
+  },
+  {
+    "character": "麻",
+    "meaning": "hemp",
+    "mnemonic": "The hemp radical — fibers hung in a shed to dry.",
+    "strokeCount": 11,
+    "variants": []
+  },
+  {
+    "character": "黃",
+    "meaning": "yellow",
+    "mnemonic": "The yellow radical — a board stretched wide, glowing at its center.",
+    "strokeCount": 11,
+    "variants": []
+  },
+  {
+    "character": "黍",
+    "meaning": "millet",
+    "mnemonic": "The millet radical — grains scattered around one bending plant.",
+    "strokeCount": 12,
+    "variants": []
+  },
+  {
+    "character": "黑",
+    "meaning": "black",
+    "mnemonic": "The black radical — soot darkening a fire's mouth.",
+    "strokeCount": 12,
+    "variants": []
+  },
+  {
+    "character": "黹",
+    "meaning": "embroidery",
+    "mnemonic": "The embroidery radical — needlework stretched on a frame.",
+    "strokeCount": 12,
+    "variants": []
+  },
+  {
+    "character": "黽",
+    "meaning": "frog",
+    "mnemonic": "The frog radical — a toad with its legs splayed and ready to leap.",
+    "strokeCount": 12,
+    "variants": []
+  },
+  {
+    "character": "鼎",
+    "meaning": "tripod",
+    "mnemonic": "The tripod radical — a bronze cauldron standing on three legs.",
+    "strokeCount": 13,
+    "variants": []
+  },
+  {
+    "character": "鼓",
+    "meaning": "drum",
+    "mnemonic": "The drum radical — a drum on its stand with a stick beside it.",
+    "strokeCount": 13,
+    "variants": []
+  },
+  {
+    "character": "鼠",
+    "meaning": "rat",
+    "mnemonic": "The rat radical — a rat with its teeth and claws on display.",
+    "strokeCount": 13,
+    "variants": []
+  },
+  {
+    "character": "鼻",
+    "meaning": "nose",
+    "mnemonic": "The nose radical — a nose with scent rising above it.",
+    "strokeCount": 14,
+    "variants": []
+  },
+  {
+    "character": "齊",
+    "meaning": "even",
+    "mnemonic": "The even radical — stalks of grain trimmed to one level.",
+    "strokeCount": 14,
+    "variants": []
+  },
+  {
+    "character": "齒",
+    "meaning": "tooth",
+    "mnemonic": "The tooth radical — rows of teeth set in a jaw.",
+    "strokeCount": 15,
+    "variants": []
+  },
+  {
+    "character": "龍",
+    "meaning": "dragon",
+    "mnemonic": "The dragon radical — a dragon rising, scales and all.",
+    "strokeCount": 16,
+    "variants": []
+  },
+  {
+    "character": "龜",
+    "meaning": "turtle",
+    "mnemonic": "The turtle radical — a shell cracked into a map of squares.",
+    "strokeCount": 16,
+    "variants": []
+  },
+  {
+    "character": "龠",
+    "meaning": "flute",
+    "mnemonic": "The flute radical — a pan flute with its pipes bound together.",
+    "strokeCount": 17,
+    "variants": []
+  }
+]

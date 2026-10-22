@@ -1,6 +1,6 @@
 {
   "name": "@kanjigarden/client",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,9 +13,9 @@
     "@kanjigarden/shared": "*",
     "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.0",
-    "@tanstack/react-query": "^5.56.2",
+    "@tanstack/react-query": "^5.104.5",
     "@tanstack/react-table": "^8.20.5",
-    "@tanstack/react-virtual": "^3.10.7",
+    "@tanstack/react-virtual": "^3.14.21",
     "framer-motion": "^11.11.0",
     "kuroshiro": "^1.2.0",
     "kuroshiro-analyzer-kuromoji": "^1.1.0",

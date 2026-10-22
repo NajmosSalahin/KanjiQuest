@@ -9,6 +9,9 @@ import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 
 const KitchenSink = lazy(() => import('./pages/KitchenSink.jsx'));
+const Learn = lazy(() => import('./pages/Learn.jsx'));
+const KanjiDetail = lazy(() => import('./pages/KanjiDetail.jsx'));
+const Licenses = lazy(() => import('./pages/Licenses.jsx'));
 
 const isDev = import.meta.env.DEV;
 
@@ -49,6 +52,9 @@ export default function App() {
               }
             >
               <Route path="/" element={<Dashboard />} />
+              <Route path="/learn" element={<Learn />} />
+              <Route path="/kanji/:character" element={<KanjiDetail />} />
+              <Route path="/licenses" element={<Licenses />} />
             </Route>
             {isDev ? <Route path="/kitchen-sink" element={<KitchenSink />} /> : null}
             <Route path="*" element={<Navigate to="/" replace />} />
