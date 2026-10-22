@@ -68,6 +68,54 @@ Rotation sets `revokedAt` (the §8 model has that field); rows are retained for 
 
 Learn/Review/Quiz/Stats/Profile/Settings links exist in the chrome now (per §7); their screens arrive in Phases 2–8. Clicking them currently redirects to `/` via the catch-all.
 
+## Implementation notes (Phase 2 — Kanji data & browse)
+
+### System `tar` + `bzip2` for `.tar.bz2` (no new dependency)
+
+The Tatoeba sentence files ship as `.tar.bz2`. Rather than adding a bz2 library (not on the approved list, §3.8), extraction uses the system toolchain. On macOS/Linux the system tar decompresses bzip2 in-process. **Windows is special:** its bsdtar ships _without_ a bzip2 filter and delegates to an external `bzip2` — and libarchive's external-program filter proved unreliable in practice (observed hang at spawn: 0 CPU, no output, depending on the parent process's stdio). The seed therefore owns the pipeline itself on win32: `bzip2 -dc <archive> | tar -xf - -C <dir>`, with `bzip2` located on PATH first and Git for Windows' bundled copy (`Program Files\Git\usr\bin\bzip2.exe`) as the standard fallback, and `tar` resolved to its absolute PATH location first (Git's `usr/bin` also ships a GNU tar that misparses `F:\…` paths as remote archives). No bz2/JS decompression dependency added; a missing bzip2 raises an instructive error.
+
+### `sort` and `status` query params on `GET /kanji` (beyond §9's list)
+
+§9 specifies `q, jlpt, strokeCount, radical, joyo, jinmeiyo, page, limit` only, but §7.3 requires a sort control (Frequency / Stroke count / JLPT) and a Status filter (All / Learning / Mastered) with no page reload. Both must be server-side filters on the same request contract, so `sort` and `status` were added. `status` is a no-op until Phase 3 joins user progress: `learning`/`mastered` return an empty page rather than fabricated data. Frequency/JLPT sorts order unknown values last (nulls-last sentinels) — nulls-first would surface rare kanji at the top of "Frequency".
+
+### Furigana rendered server-side into structured tokens
+
+Kuroshiro runs in the Node process (lazy singleton, kuromoji dictionary resolved via `createRequire`; sentence-token cache capped at 5,000). The API returns `exampleSentences[].tokens` as `[{ text, reading? }]` arrays — never HTML — so the client renders `<ruby>` via React elements with **no `dangerouslySetInnerHTML`** anywhere. Any kuroshiro failure degrades to a plain `[{ text }]` token; example sentences still render.
+
+### Canonical Kangxi radicals derived at runtime
+
+Radical numbers come from KANJIDIC2's classical numbering. Canonical characters are derived from Unicode's Kangxi block (U+2F00..U+2FD5, NFKC) instead of a hand-typed table, with a two-entry variant map (U+9751→青, U+79B8→禾) for decompositions that land on rare codepoints. `radical-mnemonics.json` covers all 214 (213 entries — 禾 serves two numbers).
+
+### KanjiVG covers 6,417 of 13,108 kanji (real data property, not a bug)
+
+The KanjiVG "all" zip contains 6,703 SVGs, all base-form JIS level 1–2 characters; ~6,417 of the 13,108 KANJIDIC2 kanji have stroke data. The rest seed with `hasStrokeOrder:false`, and §7.4's spec'd empty state ("Stroke-order data isn't available for this kanji.") covers them — the card keeps its header and controls, only the SVG is replaced. No fix needed.
+
+### Word JLPT badges have no approved data source
+
+JMdict-simplified carries no JLPT field for words. The `jlptLevel` field on example words stays `null` until an approved source exists; the badge renders conditionally and is simply absent today.
+
+### `POST /progress/add` ships early (button lands Phase 3)
+
+The §7.4 "Add to review" button is part of the Phase 2 detail screen and POSTs `/progress/add`, whose handler (and SRS engine) arrives in Phase 3. Until then the server answers 404/501-style errors honestly and the client surfaces the API message in a toast — no fake success state.
+
+### `--text-kanji-xl` / `--text-kanji-2xl` added to tokens.css
+
+Spec §3 defines `--text-kanji-xl: 6rem` and `--text-kanji-2xl: 10rem` (used by §7.4's detail kanji display); Phase 0's token file omitted them. Added verbatim from the spec — no values invented.
+
+### List queries use `aggregate()`, not `Query.sort()`
+
+Nulls-last frequency/JLPT ordering needs `$addFields` sentinel stages. Mongoose's `.sort()` rejects aggregation pipelines (it throws on array-of-stage objects), so the list and related-kanji queries run as pipelines with a `$project` that ships only the §7.3 list fields — `strokeOrderSvg` never leaves the server on list endpoints.
+
+### Data files cached in `server/.data/` (gitignored)
+
+Seeds are idempotent (§5.9) and re-runnable; downloads + kanjiapi responses (~2 GB total) must not enter git. `server/.data/` is ignored; `server/data/radical-mnemonics.json` (hand-authored content) is committed.
+
+KANJIDIC2/KanjiVG/jmdict/Tatoeba downloads and kanjiapi.dev API responses cache under `server/.data/` so `npm run download-data` and the seed skip completed work on re-runs. The directory is gitignored — no large binaries in the repo. kanjiapi.dev is MIT-licensed (`onlyskin/kanjiapi.dev`).
+
+### Test `launchTimeout` raised to 60s (local device)
+
+A cold `mongod` on the owner's Windows device measures ~12s to reach "Waiting for connections" (FTDC init + AV overhead; verified: `_initAndListen total elapsed time: 12060 ms`), above mongodb-memory-server's 10s default — suites failed with "Instance failed to start within 10000ms" despite nothing being wrong. `tests/helpers/db.js` now passes `instance: { launchTimeout: 60000 }`. Test-infra only; production unaffected (cloud uses Atlas, no local mongod).
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.

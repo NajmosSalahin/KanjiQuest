@@ -55,6 +55,35 @@
 }
 
 @layer components {
+  /* Stroke-order SVG (§7.4 + D5): idle visible/muted, drawing vermillion,
+     settled --ink-primary. Dasharray drawing needs pathLength="1" on paths. */
+  .stroke-path {
+    stroke: var(--ink-primary);
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+  .stroke-path.pending {
+    stroke: var(--ink-muted);
+  }
+  .stroke-path.current {
+    stroke: var(--accent-vermillion);
+  }
+  .stroke-svg {
+    display: block;
+    margin: 0 auto;
+    width: 240px;
+    height: 240px;
+  }
+  .stroke-svg text {
+    font-family: 'Geist Mono', ui-monospace, monospace;
+    font-size: 8px;
+    fill: var(--ink-muted);
+  }
+
   /* Skip link (§12) — first focusable element on every page */
   .skip-link {
     position: absolute;
