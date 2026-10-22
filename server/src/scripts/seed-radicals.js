@@ -45,7 +45,8 @@ async function main() {
       upsert: true,
     },
   }));
-  const result = await Radical.bulkWrite(ops, { ordered: false });
+  // Native driver bulkWrite (same mongoose bulkWrite no-op issue as seed-kanji).
+  const result = await Radical.collection.bulkWrite(ops, { ordered: false });
 
   log(
     `radicals: ${entries.length} entries — upserted ${result.upsertedCount}, modified ${result.modifiedCount}`
