@@ -112,8 +112,13 @@ async function main() {
     joyo: 0,
     jinmeiyo: 0,
   };
-  let batch = [];
-  for (const [hex, entry] of kanjidic) {
+
+  /** Build the replaceOne upsert op (+ coverage stats) for one KANJIDIC2 entry.
+   *  Shared by the main pass and the verify/retry pass below.
+   *  NOTE: ops go through the native driver (`Kanji.collection.bulkWrite`):
+   *  mongoose `Model.bulkWrite` silently no-ops valid replaceOne upserts
+   *  (observed during Atlas seeding — DECISIONS.md, found 2026-10-22). */
+  const buildOp = (hex, entry) => {
     const svg = svgByHex.get(hex) ?? null;
     const components = svg ? componentsFromSvg(svg).filter((c) => c !== entry.character) : [];
     const radicals = [...new Set(components.map((c) => radicalIndex.get(c)).filter(Boolean))];
@@ -123,53 +128,84 @@ async function main() {
     const radicalCharacter = entry.radicalNumber ? radicalChar(entry.radicalNumber) : null;
     const radicalEntry = radicalCharacter ? mnemonicsByChar.get(radicalCharacter) : null;
 
-    batch.push({
-      replaceOne: {
-        filter: { character: entry.character },
-        replacement: {
-          character: entry.character,
-          unicode: hex,
-          meanings: entry.meanings,
-          readingsOn: entry.readingsOn,
-          readingsKun: entry.readingsKun,
-          nameReadings: entry.nameReadings,
-          jlptLevel: jlpt,
-          grade: entry.grade,
-          strokeCount: entry.strokeCount ?? 0,
-          radical: radicalCharacter,
-          radicals,
-          components,
-          strokeOrderSvg: svg,
-          hasStrokeOrder: svg !== null,
-          frequencyRank: entry.frequencyRank,
-          isJoyo: joyoSet.has(entry.character),
-          isJinmeiyo: jinmeiyoSet.has(entry.character),
-          isKyouiku: entry.grade !== null && entry.grade >= 1 && entry.grade <= 6,
-          exampleWords: words,
-          exampleSentences: sentence
-            ? [{ japanese: sentence.japanese, english: sentence.english, audioUrl: null }]
-            : [],
-          mnemonic: radicalEntry?.mnemonic ?? null,
+    return {
+      stats: { svg, words, sentence, jlpt },
+      op: {
+        replaceOne: {
+          filter: { character: entry.character },
+          replacement: {
+            character: entry.character,
+            unicode: hex,
+            meanings: entry.meanings,
+            readingsOn: entry.readingsOn,
+            readingsKun: entry.readingsKun,
+            nameReadings: entry.nameReadings,
+            jlptLevel: jlpt,
+            grade: entry.grade,
+            strokeCount: entry.strokeCount ?? 0,
+            radical: radicalCharacter,
+            radicals,
+            components,
+            strokeOrderSvg: svg,
+            hasStrokeOrder: svg !== null,
+            frequencyRank: entry.frequencyRank,
+            isJoyo: joyoSet.has(entry.character),
+            isJinmeiyo: jinmeiyoSet.has(entry.character),
+            isKyouiku: entry.grade !== null && entry.grade >= 1 && entry.grade <= 6,
+            exampleWords: words,
+            exampleSentences: sentence
+              ? [{ japanese: sentence.japanese, english: sentence.english, audioUrl: null }]
+              : [],
+            mnemonic: radicalEntry?.mnemonic ?? null,
+          },
+          upsert: true,
         },
-        upsert: true,
       },
-    });
+    };
+  };
+
+  let batch = [];
+  for (const [hex, entry] of kanjidic) {
+    const { op, stats } = buildOp(hex, entry);
+    batch.push(op);
 
     coverage.total++;
-    if (svg !== null) coverage.withSvg++;
-    if (words.length > 0) coverage.withWords++;
-    if (sentence) coverage.withSentences++;
-    if (jlpt !== null) coverage.withJlpt++;
+    if (stats.svg !== null) coverage.withSvg++;
+    if (stats.words.length > 0) coverage.withWords++;
+    if (stats.sentence) coverage.withSentences++;
+    if (stats.jlpt !== null) coverage.withJlpt++;
     if (joyoSet.has(entry.character)) coverage.joyo++;
     if (jinmeiyoSet.has(entry.character)) coverage.jinmeiyo++;
 
     if (batch.length >= BATCH) {
-      await Kanji.bulkWrite(batch, { ordered: false });
+      await Kanji.collection.bulkWrite(batch, { ordered: false });
       batch = [];
       if (coverage.total % 1000 === 0) log(`   upserted ${coverage.total}/${kanjidic.size}`);
     }
   }
-  if (batch.length > 0) await Kanji.bulkWrite(batch, { ordered: false });
+  if (batch.length > 0) await Kanji.collection.bulkWrite(batch, { ordered: false });
+
+  // Verify + retry: reconcile what the server actually stored before reporting
+  // coverage, re-upserting anything that didn't land. Fails loudly rather than
+  // printing a coverage report the DB can't back up.
+  for (let round = 1; round <= 3; round++) {
+    const stored = await Kanji.collection.find({}, { projection: { character: 1 } }).toArray();
+    const storedChars = new Set(stored.map((doc) => doc.character));
+    const missingOps = [];
+    for (const [hex, entry] of kanjidic) {
+      if (!storedChars.has(entry.character)) missingOps.push(buildOp(hex, entry).op);
+    }
+    if (missingOps.length === 0) break;
+    if (round === 3) {
+      throw new Error(
+        `seed incomplete: ${missingOps.length} of ${kanjidic.size} docs failed to write`
+      );
+    }
+    log(
+      `   verify: ${missingOps.length} docs missing after upsert — re-upserting (round ${round})`
+    );
+    await Kanji.collection.bulkWrite(missingOps, { ordered: false });
+  }
 
   // Indexes (§5.5) — after data load for speed.
   log('building indexes…');

@@ -116,6 +116,10 @@ KANJIDIC2/KanjiVG/jmdict/Tatoeba downloads and kanjiapi.dev API responses cache 
 
 A cold `mongod` on the owner's Windows device measures ~12s to reach "Waiting for connections" (FTDC init + AV overhead; verified: `_initAndListen total elapsed time: 12060 ms`), above mongodb-memory-server's 10s default — suites failed with "Instance failed to start within 10000ms" despite nothing being wrong. `tests/helpers/db.js` now passes `instance: { launchTimeout: 60000 }`. Test-infra only; production unaffected (cloud uses Atlas, no local mongod).
 
+### Seed writes go through the native driver (mongoose `bulkWrite` silently no-ops)
+
+Found during Atlas seeding (2026-10-22): mongoose `Model.bulkWrite()` returned `ok: 1, upserted: 0, modified: 0` for valid `replaceOne`-upsert batches — **silently dropping 525 of 13,108 kanji docs with no error and exit 0** (deterministic, reproducible; losses scattered across batches). The identical ops through the native driver (`Kanji.collection.bulkWrite`) wrote 100% (`upserted: 523` in one call, verified 13,108/13,108). `seed-kanji.js` and `seed-radicals.js` now use the native collection, and `seed-kanji` gained a verify/retry pass that reconciles the stored character set against KANJIDIC2 before printing the §5.7 coverage report — re-upserting anything missing and failing loudly if it can't reach a complete write, so the coverage numbers are verified facts, not assumptions.
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.
