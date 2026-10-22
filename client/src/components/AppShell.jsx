@@ -221,6 +221,16 @@ export function AppShell() {
 
       <main id="main" className="mx-auto max-w-app px-4 pb-24 pt-6 md:px-6 md:py-8 lg:px-8">
         <Outlet />
+
+        {/* Data attribution (§5.8) */}
+        <footer className="mt-10 border-t border-line-subtle pt-4 text-center">
+          <Link
+            to="/licenses"
+            className="text-xs text-ink-muted underline-offset-4 transition-colors duration-fast ease-out hover:text-ink-secondary hover:underline"
+          >
+            Data sources and licenses.
+          </Link>
+        </footer>
       </main>
 
       {/* Mobile bottom tab bar (§7 chrome) */}

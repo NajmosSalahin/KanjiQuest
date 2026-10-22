@@ -38,6 +38,10 @@
   --duration-normal: 220ms;
   --duration-slow: 380ms;
   --duration-celebration: 800ms;
+
+  /* Display-kanji type scale (§3) */
+  --text-kanji-xl: 6rem;
+  --text-kanji-2xl: 10rem;
 }
 
 [data-theme='dark'] {
