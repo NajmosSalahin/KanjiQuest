@@ -120,6 +120,18 @@ A cold `mongod` on the owner's Windows device measures ~12s to reach "Waiting fo
 
 Found during Atlas seeding (2026-10-22): mongoose `Model.bulkWrite()` returned `ok: 1, upserted: 0, modified: 0` for valid `replaceOne`-upsert batches — **silently dropping 525 of 13,108 kanji docs with no error and exit 0** (deterministic, reproducible; losses scattered across batches). The identical ops through the native driver (`Kanji.collection.bulkWrite`) wrote 100% (`upserted: 523` in one call, verified 13,108/13,108). `seed-kanji.js` and `seed-radicals.js` now use the native collection, and `seed-kanji` gained a verify/retry pass that reconciles the stored character set against KANJIDIC2 before printing the §5.7 coverage report — re-upserting anything missing and failing loudly if it can't reach a complete write, so the coverage numbers are verified facts, not assumptions.
 
+## Implementation notes (deployment — owner-directed early hosting)
+
+### Live preview after every phase (2026-10-22, owner request)
+
+The owner asked to host the site online from Phase 2 onward, watching it grow phase by phase, rather than waiting for Phase 10. This uses the **exact Phase 10 stack early** (Render free-tier API + Vercel free-tier client + Atlas), so Phase 10's `DEPLOY.md`/`ARCHITECTURE.md`/final-hardening obligations are unchanged — they document and finish what's already running. Zero cost.
+
+**Architecture — why a Vercel rewrite proxy:** spec §14 mandates `SameSite=Strict` httpOnly cookies, which browsers never send across _different_ sites. A Vercel-hosted client calling a Render-hosted API directly would therefore be logged out on every request. Fix without touching the security model: Vercel rewrites `/api/*` (and `/health`) to the Render URL, so the browser only ever talks to one origin — cookies stay `SameSite=Strict`, the client's relative `/api/v1` base (`client/src/lib/api.js`) needs no changes, and CSRF double-submit logic is untouched. `deploy/vercel.json.tpl` holds the rewrite template (API URL injected at deploy time); `deploy/deploy-client.ps1` builds the client and deploys `client/dist` per phase.
+
+**Render service:** declared via `render.yaml` blueprint (repo root): free web service, `npm install` at repo root (workspaces — `server` depends on `@kanjigarden/shared`), `npm run start -w server`, health check `/api/v1/health`, Node 22. Secrets (`MONGODB_URI`, JWT secrets, `CLIENT_ORIGIN`) are `sync: false` — set in the dashboard/via API, never committed.
+
+**Known free-tier limits (acceptable for previews):** Render free services spin down after ~15 min idle (first request after idle takes ~30–50 s); the ephemeral disk wipes on redeploys (irrelevant until avatar uploads in a later phase); Atlas Network Access must allow Render egress (`0.0.0.0/0` — the owner was advised to rotate the Atlas password given the open allowlist).
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.
