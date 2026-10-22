@@ -1,0 +1,25 @@
+# Render blueprint — owner-directed early hosting (see DECISIONS.md).
+# API service only; the React client is deployed to Vercel (per-phase via
+# deploy/deploy-client.ps1) and proxies /api/* here to keep cookies same-origin.
+services:
+  - type: web
+    name: kanjiquest-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run start -w server
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '22.11.0'
+      # sync: false — set in the dashboard / via API, never committed:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
