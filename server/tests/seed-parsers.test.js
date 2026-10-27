@@ -147,6 +147,33 @@ describe('KANJIDIC2 parser (§5.3)', () => {
       radicalNumber: 72,
     });
   });
+
+  it('repeated <stroke_count> takes the first value, never NaN (bug #3 root cause)', () => {
+    // Real KANJIDIC2 shape: variant stroke counts repeat the tag (逢 -> 10/9/11);
+    // Number(["10","9"]) was NaN, which poisoned 525 Atlas docs.
+    const map = parseKanjidic2Xml(`<?xml version="1.0" encoding="UTF-8"?>
+<kanjidic2>
+  <character>
+    <literal>逢</literal>
+    <codepoint><cp_value cp_type="ucs">9022</cp_value></codepoint>
+    <radical><rad_value rad_type="classical">162</rad_value></radical>
+    <misc>
+      <stroke_count>10</stroke_count>
+      <stroke_count>9</stroke_count>
+      <stroke_count>11</stroke_count>
+      <grade>8</grade>
+      <freq>887</freq>
+    </misc>
+    <reading_meaning><rmgroup><meaning>meet</meaning></rmgroup></reading_meaning>
+  </character>
+</kanjidic2>`);
+    const entry = map.get('9022');
+    expect(entry.strokeCount).toBe(10); // first value = Jōyō standard
+    expect(Number.isFinite(entry.strokeCount)).toBe(true);
+    expect(entry.grade).toBe(8);
+    expect(entry.frequencyRank).toBe(887);
+    expect(entry.jlptLevel).toBe(null); // absent tag -> null, not undefined/NaN
+  });
 });
 
 describe('jmdict example words (§5.3 item 5)', () => {
