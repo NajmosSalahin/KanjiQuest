@@ -4,6 +4,12 @@ All notable versions of Kanji Garden. Detailed per-version notes live in [`versi
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions bump a minor per project phase.
 
+## [Unreleased]
+
+- **Live hosting (owner-directed early delivery):** Render free-tier API (`kanjiquest-api.onrender.com`) + Vercel client (`kanjiquest.vercel.app`) on the Phase 10 stack — `render.yaml` blueprint, `deploy/deploy-client.ps1` per-phase flow, and a Vercel `/api/*` rewrite proxy so §14 `SameSite=Strict` cookies stay same-origin (zero client/server code changes).
+- Deploy hardening: root `prepare` tolerates missing husky when Render builds with `NODE_ENV=production`; security headers (nosniff, frame-deny, strict referrer) on Vercel static responses — full CSP remains Phase 10 work.
+- **Bug #3 root cause closed:** KANJIDIC2 repeats `<stroke_count>` for 525 kanji, and `Number(["10","9"])` was NaN — the cause of both the silent mongoose `bulkWrite` drop _and_ poisoned prod data (`strokeCount` serialized as JSON `null`, sorted first under `?sort=strokes`). Parser takes the first repeated value, the seed verify pass now asserts positive-integer stroke counts, and the 525 Atlas docs were repaired in place. Caught by the live-site smoke test; details in [DECISIONS.md](DECISIONS.md).
+
 ## [0.3.0] — 2026-10-22 — Kanji data & browse (Phase 2) · tag `phase-2-complete`
 
 - Five-source seed pipeline: 13,108 kanji, 214 radicals, 6,417 stroke-order SVGs, 5,031 words, 2,910 sentences, 2,211 JLPT (§5.7 coverage report).
