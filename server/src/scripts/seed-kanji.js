@@ -142,7 +142,7 @@ async function main() {
             nameReadings: entry.nameReadings,
             jlptLevel: jlpt,
             grade: entry.grade,
-            strokeCount: entry.strokeCount ?? 0,
+            strokeCount: entry.strokeCount,
             radical: radicalCharacter,
             radicals,
             components,
@@ -205,6 +205,31 @@ async function main() {
       `   verify: ${missingOps.length} docs missing after upsert — re-upserting (round ${round})`
     );
     await Kanji.collection.bulkWrite(missingOps, { ordered: false });
+  }
+
+  // strokeCount integrity (DECISIONS.md bug #3): must be positive integers.
+  // NaN — born from array-valued <stroke_count> — serializes to JSON null and
+  // sorts first under sort=strokes; a double here can only be NaN (counts are
+  // integers). Fails loudly before the coverage report.
+  const corruptStroke = await Kanji.collection
+    .find(
+      {
+        $or: [
+          { strokeCount: { $type: 'double' } },
+          { strokeCount: null },
+          { strokeCount: { $lte: 0 } },
+        ],
+      },
+      { projection: { character: 1, strokeCount: 1 } }
+    )
+    .toArray();
+  if (corruptStroke.length > 0) {
+    throw new Error(
+      `strokeCount integrity check failed for ${corruptStroke.length} docs (e.g. ${corruptStroke
+        .slice(0, 5)
+        .map((d) => `${d.character}=${d.strokeCount}`)
+        .join(', ')})`
+    );
   }
 
   // Indexes (§5.5) — after data load for speed.

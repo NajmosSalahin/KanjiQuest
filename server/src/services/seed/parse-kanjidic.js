@@ -12,6 +12,20 @@ function asArray(value) {
   return Array.isArray(value) ? value : [value];
 }
 
+/**
+ * First value of a possibly-repeated tag as a finite number, else null.
+ * KANJIDIC2 repeats `<stroke_count>` when a kanji has variant stroke counts
+ * (e.g. 逢 -> ["10","9","11"]; first value = the Jōyō standard). `Number()`
+ * on the whole array is NaN, which poisoned 525 docs with NaN strokeCount
+ * (JSON-null, sorted first by sort=strokes) — DECISIONS.md bug #3 addendum.
+ */
+function toNumber(value) {
+  const first = asArray(value)[0];
+  if (first === undefined || first === null || first === '') return null;
+  const n = Number(first);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function parseKanjidic2Xml(xmlString) {
   const parser = new XMLParser({
     ignoreAttributes: false,
@@ -70,11 +84,11 @@ export function parseKanjidic2Xml(xmlString) {
       nameReadings: asArray(entry.reading_meaning?.nanori).map((n) =>
         typeof n === 'string' ? n : n['#text']
       ),
-      grade: misc.grade !== undefined ? Number(misc.grade) : null,
-      strokeCount: misc.stroke_count !== undefined ? Number(misc.stroke_count) : null,
-      frequencyRank: misc.freq !== undefined ? Number(misc.freq) : null,
-      jlptLevel: misc.jlpt !== undefined ? Number(misc.jlpt) : null,
-      radicalNumber: classicalRadical !== undefined ? Number(classicalRadical['#text']) : null,
+      grade: toNumber(misc.grade),
+      strokeCount: toNumber(misc.stroke_count),
+      frequencyRank: toNumber(misc.freq),
+      jlptLevel: toNumber(misc.jlpt),
+      radicalNumber: toNumber(classicalRadical?.['#text']),
     });
   }
 
