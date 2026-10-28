@@ -122,6 +122,52 @@ Found during Atlas seeding (2026-10-22): mongoose `Model.bulkWrite()` returned `
 
 **Root cause found (2026-10-27, caught by the live-site smoke test):** KANJIDIC2 repeats `<stroke_count>` when a kanji has variant stroke counts (逢 → `10, 9, 11`; 525 of 13,108 entries — exactly the 525 that mongoose dropped). The parser did `Number(misc.stroke_count)` on the resulting **array** → `Number("10,9,11")` → **NaN**. Mongoose evidently couldn't cast the poisoned replacement (the silent no-op); the native driver wrote those same docs but _as NaN_. Symptoms in production: `strokeCount` serialized to JSON as `null`, and `?sort=strokes` ascending surfaced all 525 first (MongoDB sorts NaN below every number) — the browse page's first "ascending stroke count" results were `㕝, 㕞, 㤚…` with null counts. Fixes: `parse-kanjidic.js` now takes the **first** repeated value via a `toNumber()` helper (first value = Jōyō standard: 違→13, 遺→15 — verified against real data), `seed-kanji.js` dropped the `?? 0` silent-zero and the verify pass now **asserts every stored `strokeCount` is a positive integer** (fails loudly on double/null/≤0 before printing coverage), a regression test covers the repeated-tag shape, and the 525 Atlas docs were repaired in place (525 matched → 525 modified → 0 mismatches, 0 doubles remaining). The `525` counts in this entry, the double-typed docs, and the array-valued entries all matched exactly.
 
+## Implementation notes (Phase 3 — SRS review system)
+
+### D8: `DELETE /progress/:character` + `myProgress` on kanji detail (owner-approved 2026-10-28)
+
+§7.4 mandates a "Remove from review" button and an SRS state line ("Learning · next review tomorrow") on the detail page, but §9 defines no endpoint to read or remove a tracked card. Owner approved D8 in the Phase 3 plan review: `GET /kanji/:character` gains a `myProgress` field (full card projection, `null` when untracked or anonymous), and `DELETE /progress/:character` removes the pair — 204, or 404 `PROGRESS_NOT_FOUND` on repeat. Mirrored as D8 in `IMPLEMENTATION_PLAN.md` §3.
+
+### History entries store a full previous-state snapshot + XP (superset of §6.5's four fields)
+
+Undo must be a "compensating transaction" (§6.5) that restores the card's exact prior state. Each `/progress/review` history entry therefore stores the **entire previous card state** (state, easeFactor, interval, repetitions, lapses, dueDate, suspendedUntil, lastReviewedAt) plus `xpAwarded` — the snapshot is what makes exact restoration and exact XP refund possible. History is capped at the last 100 entries per card (older entries are dropped on write).
+
+### Server undo window 10s; client enforces the spec'd 4s (§9's "(4s window)" is the UX)
+
+§9 labels the undo endpoint "(4s window)". The **client** enforces the spec'd 4-second UX (the banner auto-dissolves after 4s; any other key discards it, and the client never sends an undo after that). The **server** allows `UNDO_WINDOW_MS` = 10s so a click at ~3.9s whose request arrives at ~4.5s over the Render proxy still succeeds (`UNDO_WINDOW_CLOSED` past that). The extra window is latency headroom only; past 10s the server rejects exactly as specified.
+
+### Undo refunds XP exactly; streaks never revert
+
+`xpAwarded` is refunded from the history snapshot (`refundReviewXP`): totalXP / level / dailyXP return to their pre-review values exactly. Streaks are **monotonic** — `currentStreak` and `longestStreak` are never decremented by undo (the day's activity happened; the review can be un-done, the day cannot).
+
+### Thin gamification in Phase 3; `awardXP` formalized in Phase 4
+
+Review awards: Again +2 / Hard +5 / Good +10 / Easy +15, first-review-of-the-day +20 (`lastReviewDate` marker on the profile), daily-goal crossing +30 once a day (the crossing rule enforces once/day by construction), store boost 1.5× applied at award time, streak bump. This lives in `server/src/services/xp.js` so the review loop is playable end-to-end now; Phase 4 replaces/extends it with the full `awardXP` + streak/milestone services per §11 without changing the response shapes introduced here. XP is always **server-authoritative** (client renders what the response says, never computes).
+
+### §10 ease deltas are the per-state "modified" values
+
+Both halves of §10 are implemented: the standard SM-2 paragraph provides the interval-growth formula, and the spec's per-rating deltas (Again −0.20, Hard −0.15, Good 0, Easy +0.15) are the **modified** EF, clamped to [1.3, 3.0] everywhere. Review success paths increment reps; learning/relearning graduation sets reps to 1. Interval units: **minutes** in learning/relearning, **days** in review (a review-lapse halves the interval in days before the Again re-learn).
+
+### D6 `status` becomes real: `learning` = tracked-not-mastered, `mastered` = review + interval ≥ 180d
+
+`learning` = any tracked pair that is **not** mastered — includes `new`, suspended, and lapsed cards. `mastered` = `state === 'review' && interval >= MASTERED_INTERVAL_DAYS (180)`. Anonymous callers always get an empty page for both filters (never fabricated data).
+
+### `optionalAuth`: invalid tokens degrade to anonymous, not 500/401
+
+`GET /kanji/:character` (now with `myProgress`) and `GET /kanji?status=…` serve signed-in and anonymous callers alike, so the auth middleware gained `optionalAuth`: a valid token enriches the response; a missing/**invalid/expired** token degrades to anonymous instead of failing (a browser holding a stale cookie still gets public data instead of an error page).
+
+### `GET /progress/due` returns `nextDueAt` when the queue is empty
+
+§7.2's empty state needs "Next review is scheduled for 14:30 today" — the earliest **unsuspended future** due date. `/due` adds `nextDueAt` (ISO, or `null` when nothing is tracked) whenever the queue comes back empty. Additive response field; §9 doesn't dictate response shapes.
+
+### `/review` chrome: full-screen outside AppShell, mobile keeps only the bottom bar (§7.2 reading)
+
+The route sits **outside** `AppShell` (own `RequireAuth` gate): a minimal fixed top bar — back arrow · card counter · `?` shortcuts — replaces the global header at every breakpoint, and per §7.2's "Nav hidden on mobile (only bottom bar)" the mobile bottom tab bar (extracted from AppShell as a shared `MobileTabBar`) stays visible; desktop shows no other chrome. Skip (`S`) and suspend (`X`) are keyboard-only because §7.2 specifies no touch controls for them — mobile gets reveal + the 2×2 rating grid. The undo banner is the page's own bottom-left element (the shared Toast component stays top-anchored, §7 chrome).
+
+### Rating success paths + daily cap
+
+`GET /progress/due` caps at `preferences.dailyReviewLimit` (default 20), sorted due-first; rating a card recomputes `dueDate` from the SRS state machine and awards XP in the same transaction as the state write (history + profile + XP all land or none do).
+
 ## Implementation notes (deployment — owner-directed early hosting)
 
 ### Live preview after every phase (2026-10-22, owner request)
