@@ -1,5 +1,5 @@
 /**
- * Live smoke test — run after every phase's deploy (29 checks).
+ * Live smoke test — run after every phase's deploy (31 checks).
  *
  *   node deploy/smoke.mjs                       # defaults to https://kanjiquest.vercel.app
  *   node deploy/smoke.mjs https://my-app.vercel.app
@@ -127,7 +127,7 @@ let registerSetCookies = [];
 {
   const r = await call('/api/v1/kanji?limit=3&status=learning');
   check(
-    'kanji status=learning -> empty pre-Phase-3',
+    'kanji status=learning -> empty for fresh user',
     r.status === 200 && r.json?.data?.items?.length === 0 && r.json?.data?.total === 0,
     `status=${r.status}`
   );
