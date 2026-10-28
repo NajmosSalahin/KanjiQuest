@@ -2,9 +2,12 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Kanji } from '../models/Kanji.js';
 import { Radical } from '../models/Radical.js';
+import { UserProgress, publicProgress } from '../models/UserProgress.js';
+import { optionalAuth } from '../middleware/auth.js';
 import { extractStrokes } from '../services/strokes.js';
 import { furiganaTokens } from '../services/furigana.js';
 import { ok, fail } from '../utils/envelope.js';
+import { MASTERED_INTERVAL_DAYS } from '@kanjigarden/shared';
 
 export const kanjiRouter = Router();
 
@@ -29,9 +32,8 @@ const listQuerySchema = z.object({
     .optional(),
   q: z.string().trim().max(50).optional(),
   sort: z.enum(['frequency', 'strokes', 'jlpt']).default('frequency'),
-  // §7.3 Status control. userProgress lands in Phase 3 — until then only
-  // 'all' can return rows (everyone is 'new'), which the UI shows as an
-  // empty list for learning/mastered. See DECISIONS.md.
+  // §7.3 Status control (D6): learning/mastered are real from Phase 3 via
+  // userProgress — for anonymous callers everyone is still 'new' (empty).
   status: z.enum(['all', 'learning', 'mastered']).default('all'),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(50),
@@ -91,7 +93,7 @@ function buildSort(sort) {
   return [{ $addFields: freq }, { $sort: { _freq: 1, character: 1 } }];
 }
 
-kanjiRouter.get('/', async (req, res, next) => {
+kanjiRouter.get('/', optionalAuth, async (req, res, next) => {
   try {
     const parsed = listQuerySchema.safeParse(req.query);
     if (!parsed.success) {
@@ -105,12 +107,44 @@ kanjiRouter.get('/', async (req, res, next) => {
     }
     const query = parsed.data;
 
-    // Status filter needs userProgress (Phase 3). No kanji has progress yet.
+    const filter = buildFilter(query);
+
+    // D6 status filter: authenticated via userProgress (learning = tracked &
+    // not mastered, incl. new; mastered = review with interval >= 180d).
     if (query.status !== 'all') {
-      return ok(res, { items: [], total: 0, page: query.page, limit: query.limit, hasMore: false });
+      if (!req.userId) {
+        return ok(res, {
+          items: [],
+          total: 0,
+          page: query.page,
+          limit: query.limit,
+          hasMore: false,
+        });
+      }
+      const progressFilter =
+        query.status === 'mastered'
+          ? { userId: req.userId, state: 'review', interval: { $gte: MASTERED_INTERVAL_DAYS } }
+          : {
+              userId: req.userId,
+              $or: [
+                { state: { $in: ['new', 'learning', 'relearning'] } },
+                { state: 'review', interval: { $lt: MASTERED_INTERVAL_DAYS } },
+              ],
+            };
+      const progress = await UserProgress.find(progressFilter).select('kanjiId').lean();
+      const kanjiIds = progress.map((p) => p.kanjiId);
+      if (kanjiIds.length === 0) {
+        return ok(res, {
+          items: [],
+          total: 0,
+          page: query.page,
+          limit: query.limit,
+          hasMore: false,
+        });
+      }
+      filter._id = { $in: kanjiIds };
     }
 
-    const filter = buildFilter(query);
     const skip = (query.page - 1) * query.limit;
 
     const [items, total] = await Promise.all([
@@ -136,7 +170,7 @@ kanjiRouter.get('/', async (req, res, next) => {
   }
 });
 
-kanjiRouter.get('/:character', async (req, res, next) => {
+kanjiRouter.get('/:character', optionalAuth, async (req, res, next) => {
   try {
     const character = req.params.character;
     if ([...character].length !== 1) {
@@ -147,6 +181,13 @@ kanjiRouter.get('/:character', async (req, res, next) => {
     if (!kanji) {
       return fail(res, 404, 'KANJI_NOT_FOUND', 'That kanji was not found.');
     }
+
+    // D8: the viewer's own SRS card when signed in, else null (§9).
+    const myProgress = req.userId
+      ? publicProgress(
+          await UserProgress.findOne({ userId: req.userId, kanjiId: kanji._id }).lean()
+        )
+      : null;
 
     const strokes = extractStrokes(kanji.strokeOrderSvg);
 
@@ -221,6 +262,7 @@ kanjiRouter.get('/:character', async (req, res, next) => {
       radicals: radicalDocs,
       components: componentDocs,
       related,
+      myProgress,
     });
   } catch (err) {
     return next(err);

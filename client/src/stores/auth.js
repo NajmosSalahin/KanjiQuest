@@ -12,6 +12,11 @@ export const useAuth = create((set) => ({
     set({ status: 'authed', user: data.user, gamification: data.gamification });
   },
 
+  /** Partial gamification refresh after awarding XP (reviews, Phase 3). */
+  mergeGamification(partial) {
+    set((state) => ({ gamification: { ...state.gamification, ...partial } }));
+  },
+
   async hydrate() {
     try {
       const data = await api('/users/me');

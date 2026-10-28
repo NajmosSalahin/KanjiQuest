@@ -139,6 +139,37 @@ function ProfileMenu() {
   );
 }
 
+/** Mobile-only bottom tab bar (§7 chrome). Exported so full-screen routes
+ *  like /review keep "only the bottom bar" visible (§7.2). */
+export function MobileTabBar() {
+  return (
+    <nav
+      aria-label="Primary"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-line-subtle bg-surface md:hidden"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      <div className="flex">
+        {TAB_LINKS.map(({ to, label, Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            className={({ isActive }) =>
+              cn(
+                'flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors duration-fast ease-out',
+                isActive ? 'text-vermillion' : 'text-ink-muted'
+              )
+            }
+          >
+            <Icon size={24} aria-hidden="true" />
+            {label}
+          </NavLink>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const gamification = useAuth((s) => s.gamification);
@@ -233,31 +264,7 @@ export function AppShell() {
         </footer>
       </main>
 
-      {/* Mobile bottom tab bar (§7 chrome) */}
-      <nav
-        aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line-subtle bg-surface md:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-        <div className="flex">
-          {TAB_LINKS.map(({ to, label, Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                cn(
-                  'flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors duration-fast ease-out',
-                  isActive ? 'text-vermillion' : 'text-ink-muted'
-                )
-              }
-            >
-              <Icon size={24} aria-hidden="true" />
-              {label}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
+      <MobileTabBar />
     </div>
   );
 }

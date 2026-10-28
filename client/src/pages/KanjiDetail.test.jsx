@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('../lib/api.js', () => ({ api: vi.fn() }));
@@ -100,7 +100,10 @@ function renderDetail() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <MemoryRouter initialEntries={['/kanji/x']}>
-          <KanjiDetail />
+          {/* Real route so useParams() resolves :character (D8 body/paths). */}
+          <Routes>
+            <Route path="/kanji/:character" element={<KanjiDetail />} />
+          </Routes>
         </MemoryRouter>
       </ToastProvider>
     </QueryClientProvider>
@@ -212,5 +215,54 @@ describe('Kanji detail (§7.4) — populated kanji', () => {
     await user.click(screen.getByLabelText('Play reading ニチ'));
     await user.click(screen.getByLabelText('Play sentence audio'));
     expect(screen.getByText('日本')).toBeDefined(); // page still intact
+  });
+});
+
+describe('Kanji detail (§7.4) — review garden wiring (Phase 3 / D8)', () => {
+  const TRACKED = {
+    ...FULL,
+    myProgress: {
+      id: '656f000000000000000000b1',
+      kanjiId: '656f000000000000000000c1',
+      state: 'learning',
+      dueDate: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+      interval: 6,
+      easeFactor: 2.5,
+      repetitions: 2,
+      lapses: 0,
+      lastReviewedAt: new Date().toISOString(),
+      suspendedUntil: null,
+      suspended: false,
+      mastered: false,
+    },
+  };
+
+  it('untracked kanji shows Add to review and posts to /progress/add', async () => {
+    const user = userEvent.setup();
+    api.mockResolvedValue(FULL); // no myProgress field
+    renderDetail();
+    await screen.findByText('日本');
+
+    await user.click(screen.getByRole('button', { name: 'Add to review' }));
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith('/progress/add', {
+        method: 'POST',
+        body: { character: 'x' },
+      })
+    );
+  });
+
+  it('tracked kanji shows its SRS state and Remove calls D8 DELETE', async () => {
+    const user = userEvent.setup();
+    api.mockResolvedValue(TRACKED);
+    renderDetail();
+    await screen.findByText('日本');
+
+    expect(screen.getByText('Learning')).toBeDefined();
+    expect(screen.getByText(/next review in \d+ days/)).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Add to review' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Remove from review' }));
+    await waitFor(() => expect(api).toHaveBeenCalledWith('/progress/x', { method: 'DELETE' }));
   });
 });

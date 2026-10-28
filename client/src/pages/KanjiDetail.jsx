@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Volume2 } from 'lucide-react';
 import { api } from '../lib/api.js';
 import { cn } from '../lib/cn.js';
@@ -13,6 +13,31 @@ import { StrokeOrderPlayer, FuriganaText } from '../components/StrokeOrderPlayer
 /** Kanji detail — prompt.md §7.4, matching the approved mockup layout. */
 
 const cardHeadings = 'font-display text-lg font-medium text-ink-primary';
+
+const STATE_LABELS = {
+  new: 'New',
+  learning: 'Learning',
+  relearning: 'Learning again',
+  review: 'Reviewing',
+};
+
+/** "next review tomorrow" style suffix (§7.4). */
+function nextReviewText(progress) {
+  if (progress.suspended) {
+    return `buried until ${new Date(progress.suspendedUntil).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    })}`;
+  }
+  const due = new Date(progress.dueDate);
+  const diff = due.getTime() - Date.now();
+  if (diff <= 0) return 'next review now';
+  const startOf = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const dayDiff = Math.round((startOf(due) - startOf(new Date())) / 86_400_000);
+  if (dayDiff <= 0) return 'next review later today';
+  if (dayDiff === 1) return 'next review tomorrow';
+  return `next review in ${dayDiff} days`;
+}
 
 function ReadingCard({ title, character, readings }) {
   if (!readings || readings.length === 0) return null;
@@ -74,17 +99,29 @@ export default function KanjiDetail() {
   const { character } = useParams();
   const navigate = useNavigate();
   const { push } = useToast();
+  const queryClient = useQueryClient();
 
   const detailQuery = useQuery({
     queryKey: ['kanji-detail', character],
     queryFn: () => api(`/kanji/${encodeURIComponent(character)}`),
   });
 
-  // "Add to review" posts to POST /progress/add, which lands with Phase 3's
-  // SRS queue (§9). Until then the click surfaces the API's response.
   async function addToReview() {
     try {
       await api('/progress/add', { method: 'POST', body: { character } });
+      push({ message: 'Added to your review garden.', tone: 'success' });
+      await queryClient.invalidateQueries({ queryKey: ['kanji-detail', character] });
+    } catch (err) {
+      push({ message: err.message, tone: 'info' });
+    }
+  }
+
+  // §7.4 "Remove from review" — D8 DELETE /progress/:character.
+  async function removeFromReview() {
+    try {
+      await api(`/progress/${encodeURIComponent(character)}`, { method: 'DELETE' });
+      push({ message: 'Removed from your review garden.', tone: 'success' });
+      await queryClient.invalidateQueries({ queryKey: ['kanji-detail', character] });
     } catch (err) {
       push({ message: err.message, tone: 'info' });
     }
@@ -118,7 +155,7 @@ export default function KanjiDetail() {
     );
   }
 
-  const { kanji, strokes, radicals, components, related } = detailQuery.data;
+  const { kanji, strokes, radicals, components, related, myProgress } = detailQuery.data;
   const hasWords = (kanji.exampleWords ?? []).length > 0;
   const sentence = (kanji.exampleSentences ?? [])[0] ?? null;
 
@@ -219,9 +256,27 @@ export default function KanjiDetail() {
 
       {/* RIGHT COLUMN (sticky) */}
       <aside className="flex flex-col gap-4 lg:sticky lg:top-[88px]">
-        <Button size="block" onClick={addToReview}>
-          Add to review
-        </Button>
+        {myProgress ? (
+          /* Already tracked (§7.4): current SRS state + remove */
+          <div className="rounded-card border border-line-subtle bg-surface p-4">
+            <p className="text-center text-sm text-ink-secondary">
+              <span className="font-medium text-ink-primary">
+                {myProgress.mastered
+                  ? 'Mastered'
+                  : (STATE_LABELS[myProgress.state] ?? myProgress.state)}
+              </span>
+              <span aria-hidden="true"> · </span>
+              {nextReviewText(myProgress)}
+            </p>
+            <Button variant="outline" size="block" className="mt-3" onClick={removeFromReview}>
+              Remove from review
+            </Button>
+          </div>
+        ) : (
+          <Button size="block" onClick={addToReview}>
+            Add to review
+          </Button>
+        )}
 
         {radicals.length > 0 ? (
           <div className="rounded-card border border-line-subtle bg-surface p-5">

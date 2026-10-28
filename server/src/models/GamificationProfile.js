@@ -13,6 +13,7 @@ const gamificationProfileSchema = new Schema({
   coins: { type: Number, default: 0 },
   dailyGoalXP: { type: Number, default: 100 },
   dailyXPProgress: { type: Number, default: 0 },
+  lastReviewDate: { type: String, default: null }, // YYYY-MM-DD, first-review-of-day bookkeeping
   unlockedAchievementIds: { type: [String], default: [] },
   equippedTitle: { type: String, default: null },
   xpBoostExpiresAt: { type: Date, default: null },
