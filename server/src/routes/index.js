@@ -6,6 +6,7 @@ import { kanjiRouter } from './kanji.routes.js';
 import { radicalsRouter } from './radicals.routes.js';
 import { licensesRouter } from './licenses.routes.js';
 import { progressRouter, reviewRouter } from './progress.routes.js';
+import { gamificationRouter } from './gamification.routes.js';
 import { requireAuth } from '../middleware/auth.js';
 
 export const apiRouter = Router();
@@ -18,6 +19,6 @@ apiRouter.use('/radicals', radicalsRouter);
 apiRouter.use('/licenses', licensesRouter);
 apiRouter.use('/progress', requireAuth, progressRouter); // Phase 3
 apiRouter.use('/review', requireAuth, reviewRouter); // Phase 3
+apiRouter.use('/gamification', requireAuth, gamificationRouter); // Phase 4
 
-// Phase 4+ mounts: gamification, store, leaderboard, quiz, quests, stats
-// (prompt.md §9).
+// Phase 5+ mounts: store, leaderboard, quiz, quests, stats (prompt.md §9).

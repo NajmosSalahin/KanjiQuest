@@ -63,3 +63,24 @@ export const STORE = Object.freeze({
 export const MASTERED_INTERVAL_DAYS = 180;
 
 export const XP_BOOST_MULTIPLIER = 1.5;
+
+/** Daily goal (§11.6): default 50 XP, configurable 20/50/100/200. */
+export const DAILY_GOAL_OPTIONS = Object.freeze([20, 50, 100, 200]);
+export const DEFAULT_DAILY_GOAL_XP = 50;
+
+/** §11.4 streak milestones: achievements + celebration modal at 7/30/100. */
+export const STREAK_MILESTONES = Object.freeze([7, 30, 100]);
+
+/** §7.1 dashboard bar: next-milestone label names (owner decision, Phase 4). */
+export const BAR_MILESTONES = Object.freeze([
+  { days: 14, name: 'Wakaba' },
+  { days: 30, name: 'Sakura' },
+  { days: 60, name: 'Hanami' },
+  { days: 100, name: 'Momiji' },
+]);
+
+/** §11.3 amended by owner (D11): 41 achievements, all Japanese-named. */
+export const ACHIEVEMENT_TOTAL = 41;
+
+/** §11.4 streak repair price (coins). */
+export const STREAK_REPAIR_COST = STORE.STREAK_REPAIR_COST;

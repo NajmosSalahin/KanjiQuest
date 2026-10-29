@@ -1,11 +1,15 @@
 /**
- * Thin XP/streak service for Phase 3 reviews — §11.1/§11.2/§11.4.
+ * XP service — §11.1/§11.2/§11.4. Phase 4 formalizes the Phase 3 "thin" XP
+ * into the single server-authoritative awardXP entry every XP source will
+ * flow through (reviews now; quiz/sprint in Phase 6, quests in Phase 5 —
+ * the event signature exists for them).
  *
- * Phase 4 replaces the call sites with the full awardXP service (quests,
- * achievements, quiz/sprint XP); the rules implemented here are exactly the
- * review-shaped ones: per-rating XP, first-review-of-day +20, daily-goal
- * crossing +30 (once/day via the crossing itself), streak increments, and
- * the store's 1.5x boost applied at award time server-side (§11.1).
+ * Achievement unlocks (§11.3) are evaluated inside awardXP and their rewards
+ * land in the same transaction: coins immediately, XP through the same 1.5x
+ * boost rule ("all XP", §11.1), level recomputed once at the end.
+ *
+ * Achievement XP counts toward totalXP/level but NOT toward the daily goal
+ * or the streak (both are review-driven) — DECISIONS.md Phase 4 notes.
  */
 import {
   QUIZ_XP,
@@ -13,18 +17,16 @@ import {
   XP_BOOST_MULTIPLIER,
   xpToNextLevel,
   MAX_LEVEL,
+  DEFAULT_DAILY_GOAL_XP,
+  LEVEL_TITLES,
+  RATING,
 } from '@kanjigarden/shared';
 import { ensureGamificationProfile } from '../models/GamificationProfile.js';
+import { applyStreak, crossedMilestone } from './streak.js';
+import { evaluateAchievements } from './achievements.js';
+import { localDay, localHour, addDays } from './time.js';
 
-/** YYYY-MM-DD in the user's timezone (§11.4 local-day boundaries). */
-export function localDay(date, timeZone = 'UTC') {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
+export { localDay, localHour };
 
 /** Level N -> N+1 costs floor(100 x N^1.5); level holds when cumulative XP
  *  covers every cost below it (matches the profile's level-1 default of 100). */
@@ -43,19 +45,60 @@ export function computeLevel(totalXP) {
   return { level, xpToNextLevel: xpToNextLevel(level) };
 }
 
+/** Store XP boost: 1.5x for 24h, applied at award time server-side (§11.1). */
+function applyBoost(profile, amount, now) {
+  return profile.xpBoostExpiresAt && profile.xpBoostExpiresAt > now
+    ? Math.round(amount * XP_BOOST_MULTIPLIER)
+    : amount;
+}
+
 /**
- * Award review XP for one rated card (server-authoritative, §11.1).
- * Returns the amounts for the response + the history entry's xpAwarded.
+ * Award XP for one gamification event. Currently 'review' (Phase 3 flow);
+ * later events (quiz correct/session/sprint, quest, sweep) join here.
+ *
+ * Returns the response payload plus:
+ *  - `newlyUnlocked[]` — achievements unlocked by this event (toast feed)
+ *  - `streakMilestone` — 7/30/100 crossing days (celebration modal, §11.4)
+ *  - `gami` — pre-award counter snapshot for the §6.5 undo's exact restore
  */
-export async function awardReviewXP(user, rating, now = new Date()) {
-  const profile = await ensureGamificationProfile(user._id, user.preferences?.dailyGoalXP ?? 100);
+export async function awardXP(user, event, payload, now = new Date()) {
+  if (event !== 'review') {
+    throw new Error(`awardXP: unsupported event "${event}" (ships in a later phase)`);
+  }
+  const { rating } = payload;
+  const profile = await ensureGamificationProfile(
+    user._id,
+    user.preferences?.dailyGoalXP ?? DEFAULT_DAILY_GOAL_XP
+  );
   const tz = user.timezone ?? 'UTC';
   const today = localDay(now, tz);
-  const yesterday = localDay(new Date(now.getTime() - 24 * 60 * 60 * 1000), tz);
+  const yesterday = addDays(today, -1);
+
+  // Exact-restore snapshot for undo (history[].gami).
+  const gami = {
+    totalReviews: profile.totalReviews,
+    dailyReviewsCount: profile.dailyReviewsCount,
+    dailyAgainToday: profile.dailyAgainToday,
+    currentPerfectRun: profile.currentPerfectRun,
+    reviewsBefore8: profile.reviewsBefore8,
+    reviewsAfter23: profile.reviewsAfter23,
+    goalStreak: profile.goalStreak,
+    goalMetDate: profile.goalMetDate,
+    dailyCountersDate: profile.dailyCountersDate,
+  };
+
+  const previousLevel = profile.currentLevel;
+  const previousStreak = profile.currentStreak;
 
   const newDay = profile.lastActivityDate !== today;
   const dailyXP = newDay ? 0 : profile.dailyXPProgress;
+  if (profile.dailyCountersDate !== today) {
+    profile.dailyReviewsCount = 0;
+    profile.dailyAgainToday = false;
+    profile.dailyCountersDate = today;
+  }
 
+  // §11.1: per-rating XP + first-review-of-day + daily-goal crossing.
   let awarded = REVIEW_XP[rating];
   const bonuses = [];
   if (profile.lastReviewDate !== today) {
@@ -68,56 +111,93 @@ export async function awardReviewXP(user, rating, now = new Date()) {
     bonuses.push('goalMet');
   }
 
-  // Store XP boost: 1.5x for 24h, applied at award time server-side (§11.1).
-  const boosted =
-    profile.xpBoostExpiresAt && profile.xpBoostExpiresAt > now
-      ? Math.round(awarded * XP_BOOST_MULTIPLIER)
-      : awarded;
+  const boostedReviewXP = applyBoost(profile, awarded, now);
 
-  // Streak (§11.4): first activity of a local day extends or restarts.
-  let streak = profile.currentStreak;
-  if (newDay) {
-    streak = profile.lastActivityDate === yesterday ? streak + 1 : 1;
-  }
-
-  const totalXP = profile.totalXP + boosted;
-  const { level, xpToNextLevel: toNext } = computeLevel(totalXP);
-
-  profile.totalXP = totalXP;
-  profile.dailyXPProgress = dailyXP + boosted;
-  profile.currentLevel = level;
-  profile.xpToNextLevel = toNext;
-  profile.currentStreak = streak;
-  profile.longestStreak = Math.max(profile.longestStreak, streak);
+  // §11.4 streak (timezone-correct, freeze-aware) + Phase 4 counters.
+  applyStreak(profile, today);
   profile.lastActivityDate = today;
   profile.lastReviewDate = today;
+  profile.dailyXPProgress = dailyXP + boostedReviewXP;
+  profile.totalReviews += 1;
+  profile.dailyReviewsCount += 1;
+  profile.dailyAgainToday = profile.dailyAgainToday || rating === RATING.AGAIN;
+  profile.currentPerfectRun = rating === RATING.AGAIN ? 0 : profile.currentPerfectRun + 1;
+  const hour = localHour(now, tz);
+  if (hour < 8) profile.reviewsBefore8 += 1;
+  if (hour >= 23) profile.reviewsAfter23 += 1;
+
+  // Daily-goal streak (§11.3 Nanakusa/Misoka/Hitasura): consecutive goal days.
+  if (bonuses.includes('goalMet')) {
+    profile.goalStreak = profile.goalMetDate === yesterday ? profile.goalStreak + 1 : 1;
+    profile.goalMetDate = today;
+  }
+
+  profile.totalXP += boostedReviewXP;
+  // Provisional level so LEVEL achievements evaluate against the crossing.
+  const provisional = computeLevel(profile.totalXP);
+  profile.currentLevel = provisional.level;
+  profile.xpToNextLevel = provisional.xpToNextLevel;
+
+  // §11.3 achievements — unlocks, coins, boosted reward XP.
+  const { newly, achievementXP } = await evaluateAchievements(profile, user, { now });
+  profile.totalXP += achievementXP;
+
+  // §11.2 final level after every XP source landed.
+  const { level, xpToNextLevel: toNext } = computeLevel(profile.totalXP);
+  profile.currentLevel = level;
+  profile.xpToNextLevel = toNext;
+  profile.longestStreak = Math.max(profile.longestStreak, profile.currentStreak);
   await profile.save();
 
+  const streakMilestone = crossedMilestone(previousStreak, profile.currentStreak);
+
   return {
-    awarded: boosted,
+    awarded: boostedReviewXP,
     bonuses,
-    totalXP,
+    totalXP: profile.totalXP,
     dailyXPProgress: profile.dailyXPProgress,
     dailyGoalXP: profile.dailyGoalXP,
-    currentStreak: streak,
+    currentStreak: profile.currentStreak,
     level,
     xpToNextLevel: toNext,
+    title: LEVEL_TITLES[level - 1],
+    previousLevel,
+    leveledUp: level > previousLevel,
+    coins: profile.coins,
+    streakMilestone,
+    newlyUnlocked: newly,
+    gami,
   };
 }
 
 /**
- * Compensating refund for §6.5 undo: reverses totalXP/level/dailyXP exactly.
- * Streaks are deliberately NOT reverted — showing up still counts, and the
- * 4-second undo window can't un-show (DECISIONS.md).
+ * Compensating refund for §6.5 undo: reverses totalXP/level/dailyXP and the
+ * Phase 4 counters exactly (via the gami snapshot). Streaks are deliberately
+ * NOT reverted — showing up still counts, and the 4-second undo window can't
+ * un-show; unlocked achievements are permanent (DECISIONS.md).
  */
-export async function refundReviewXP(user, xpAwarded) {
-  const profile = await ensureGamificationProfile(user._id, user.preferences?.dailyGoalXP ?? 100);
+export async function refundReviewXP(user, xpAwarded, gami) {
+  const profile = await ensureGamificationProfile(
+    user._id,
+    user.preferences?.dailyGoalXP ?? DEFAULT_DAILY_GOAL_XP
+  );
   const totalXP = Math.max(0, profile.totalXP - xpAwarded);
   const { level, xpToNextLevel: toNext } = computeLevel(totalXP);
   profile.totalXP = totalXP;
   profile.dailyXPProgress = Math.max(0, profile.dailyXPProgress - xpAwarded);
   profile.currentLevel = level;
   profile.xpToNextLevel = toNext;
+  if (gami) {
+    profile.totalReviews = Math.max(0, gami.totalReviews ?? profile.totalReviews);
+    profile.dailyReviewsCount = Math.max(0, gami.dailyReviewsCount ?? profile.dailyReviewsCount);
+    profile.dailyAgainToday = gami.dailyAgainToday ?? profile.dailyAgainToday;
+    profile.currentPerfectRun = Math.max(0, gami.currentPerfectRun ?? profile.currentPerfectRun);
+    profile.reviewsBefore8 = Math.max(0, gami.reviewsBefore8 ?? profile.reviewsBefore8);
+    profile.reviewsAfter23 = Math.max(0, gami.reviewsAfter23 ?? profile.reviewsAfter23);
+    profile.goalStreak = Math.max(0, gami.goalStreak ?? profile.goalStreak);
+    profile.goalMetDate = gami.goalMetDate ?? profile.goalMetDate;
+    profile.dailyCountersDate = gami.dailyCountersDate ?? profile.dailyCountersDate;
+  }
   await profile.save();
   return {
     refunded: xpAwarded,

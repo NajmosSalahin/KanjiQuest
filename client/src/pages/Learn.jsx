@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search } from 'lucide-react';
@@ -154,9 +154,14 @@ function EmptyGardenBedSvg({ size = 180 }) {
 }
 
 export default function Learn() {
+  const [searchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState('');
   const [q, setQ] = useState('');
-  const [tab, setTab] = useState('all');
+  // Deep link (§7.1 empty state): /learn?jlpt=5 opens the N5 tab.
+  const [tab, setTab] = useState(() => {
+    const jlpt = searchParams.get('jlpt');
+    return JLPT_TABS.some((entry) => entry.value === jlpt) ? jlpt : 'all';
+  });
   const [radical, setRadical] = useState(null);
   const [sort, setSort] = useState('frequency');
   const [status, setStatus] = useState('all');

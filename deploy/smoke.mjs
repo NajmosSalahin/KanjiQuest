@@ -1,5 +1,5 @@
 /**
- * Live smoke test — run after every phase's deploy (31 checks).
+ * Live smoke test — run after every phase's deploy (37 checks).
  *
  *   node deploy/smoke.mjs                       # defaults to https://kanjiquest.vercel.app
  *   node deploy/smoke.mjs https://my-app.vercel.app
@@ -9,8 +9,9 @@
  * D6 sort/status, detail + 404 envelope, radicals, licenses, auth failure
  * paths, CSRF header enforcement, the full Phase 3 review flow (add, due,
  * review+XP, undo, re-review, suspend, stats, D8 delete, myProgress, D6
- * learning join, anonymous invariants), logout, SPA fallback, security
- * headers.
+ * learning join, anonymous invariants), Phase 4 gamification (profile with the
+ * §11.6 goal default, 41 achievements + first-review unlock, D10 repair
+ * negative path, anonymous guard), logout, SPA fallback, security headers.
  *
  * Registers a throwaway `smoke+<epoch>@example.com` user; when a root `.env`
  * with MONGODB_URI is found (local runs), it deletes that user + sessions +
@@ -219,21 +220,26 @@ let registerSetCookies = [];
     r.status === 200 && p?.state === 'review' && p?.interval === 1 && xp?.awarded === 30 && xp?.currentStreak === 1,
     `state=${p?.state} interval=${p?.interval} xp=${xp?.awarded}`
   );
+  check(
+    'first review unlocks Hajimemashite (+20) -> totalXP 50',
+    xp?.totalXP === 50 && (xp?.newlyUnlocked ?? []).some((a) => a.id === 'hajimemashite'),
+    `totalXP=${xp?.totalXP} unlocked=${(xp?.newlyUnlocked ?? []).map((a) => a.id).join(',')}`
+  );
 
   const u = await call(`/api/v1/review/${card.id}/undo`, { method: 'POST' });
   check(
-    'undo in window -> restored new + refund 30',
+    'undo in window -> restored new + refund 30 (achievement XP persists)',
     u.status === 200 &&
       u.json?.data?.progress?.state === 'new' &&
       u.json?.data?.xp?.refunded === 30 &&
-      u.json?.data?.xp?.totalXP === 0,
-    `status=${u.status} state=${u.json?.data?.progress?.state}`
+      u.json?.data?.xp?.totalXP === 20,
+    `status=${u.status} state=${u.json?.data?.progress?.state} totalXP=${u.json?.data?.xp?.totalXP}`
   );
 
   const again = await call('/api/v1/progress/review', { method: 'POST', body: { cardId: card.id, rating: 2 } });
   check(
-    're-review after undo -> 10 XP (first bonus already used)',
-    again.status === 200 && again.json?.data?.xp?.awarded === 10 && again.json?.data?.xp?.totalXP === 10,
+    're-review after undo -> 10 XP, totalXP 30',
+    again.status === 200 && again.json?.data?.xp?.awarded === 10 && again.json?.data?.xp?.totalXP === 30,
     `xp=${again.json?.data?.xp?.awarded}`
   );
 
@@ -281,6 +287,44 @@ let registerSetCookies = [];
   );
 }
 
+// 22b. Phase 4 (§11): gamification profile — §11.6 goal default + week grid
+{
+  const r = await call('/api/v1/gamification/profile');
+  const d = r.json?.data;
+  check(
+    'gamification/profile -> goal XP 50 (§11.6) + level + coins',
+    r.status === 200 && d?.dailyGoalXP === 50 && typeof d?.level === 'number' && typeof d?.coins === 'number',
+    `status=${r.status} goal=${d?.dailyGoalXP} level=${d?.level}`
+  );
+  check(
+    'gamification/profile -> rolling 7-day grid + 41 achievements + streak',
+    Array.isArray(d?.week) && d.week.length === 7 && d?.achievements?.total === 41 && (d?.currentStreak ?? 0) >= 1,
+    `week=${d?.week?.length} total=${d?.achievements?.total} streak=${d?.currentStreak}`
+  );
+}
+
+// 22c. Phase 4 (§11): achievements list — 41 defs, first-review unlock recorded
+{
+  const r = await call('/api/v1/gamification/achievements');
+  const items = r.json?.data?.items ?? [];
+  const hajime = items.find((a) => a.id === 'hajimemashite');
+  check(
+    'gamification/achievements -> 41 defs, hajimemashite unlocked with date',
+    r.status === 200 && items.length === 41 && hajime?.unlocked === true && !!hajime?.unlockedAt,
+    `items=${items.length} unlocked=${r.json?.data?.unlockedCount}`
+  );
+}
+
+// 22d. Phase 4 (§11): D10 repair negative path — active streak is not repairable
+{
+  const r = await call('/api/v1/gamification/streak/repair', { method: 'POST' });
+  check(
+    'streak/repair -> 409 STREAK_NOT_REPAIRABLE (active streak, D10)',
+    r.status === 409 && r.json?.error?.code === 'STREAK_NOT_REPAIRABLE',
+    `status=${r.status} code=${r.json?.error?.code}`
+  );
+}
+
 // 23. logout invalidates
 {
   const r = await call('/api/v1/auth/logout', { method: 'POST' });
@@ -304,6 +348,8 @@ let registerSetCookies = [];
   );
   const due = await call('/api/v1/progress/due');
   check('anonymous /progress/due -> 401', due.status === 401, `status=${due.status}`);
+  const gp = await call('/api/v1/gamification/profile');
+  check('anonymous /gamification/profile -> 401', gp.status === 401, `status=${gp.status}`);
 }
 
 // 25. SPA fallback

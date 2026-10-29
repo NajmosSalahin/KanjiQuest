@@ -129,6 +129,24 @@ describe('Learn browser (§7.3)', () => {
     });
   });
 
+  it('opens the N5 tab from the dashboard deep link ?jlpt=5 (§7.1)', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/learn?jlpt=5']}>
+          <Learn />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+    const n5 = await screen.findByRole('tab', { name: 'N5' });
+    expect(n5.getAttribute('aria-selected')).toBe('true');
+    await waitFor(() => {
+      expect(api.mock.calls.some(([path]) => path.includes('jlpt=5'))).toBe(true);
+    });
+  });
+
   it('toggles a radical pill filter', async () => {
     const user = userEvent.setup();
     renderLearn();

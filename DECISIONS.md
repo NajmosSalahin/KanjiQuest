@@ -168,6 +168,52 @@ The route sits **outside** `AppShell` (own `RequireAuth` gate): a minimal fixed 
 
 `GET /progress/due` caps at `preferences.dailyReviewLimit` (default 20), sorted due-first; rating a card recomputes `dueDate` from the SRS state machine and awards XP in the same transaction as the state write (history + profile + XP all land or none do).
 
+## Implementation notes (Phase 4 — Gamification core)
+
+### D10: `POST /gamification/streak/repair` added (owner-approved 2026-10-28)
+
+§11.4's repair banner needs an action, but §9's endpoint table defines no repair route. Owner approved D10 in the Phase 4 plan review: `POST /gamification/streak/repair` charges `STORE.STREAK_REPAIR_COST` (100 coins), is allowed only when **exactly the previous local calendar day** went unreviewed (the spec's "broken within the last 24h" — the "ended yesterday" banner case), and is capped at **once per calendar month** (`lastStreakRepairAt`, compared in the user's timezone). 409s otherwise: `STREAK_NOT_REPAIRABLE` / `INSUFFICIENT_COINS` / `REPAIR_ALREADY_USED`. The effect makes the missed day count as shown-up (`lastActivityDate = yesterday`), so the next review chains normally — 12 → 13 — instead of resetting. Mirrored as D10 in `IMPLEMENTATION_PLAN.md` §3.
+
+### D11: 41 achievements, all Japanese-named, Completionist = 32 (owner-approved 2026-10-28)
+
+Amends D3 (23 → 41). The owner confirmed the full roster: every achievement is named in **romaji + 漢字/かな** (e.g. `Jūren 十連`, `Kokoro 心`; spec-style `N5 Kansei N5・完成` kept), and **Zenshū 全集** (Completionist) unlocks at **32 of the other 40** — the original ~80% ratio D3's 19-of-23 expressed. The 18 defs beyond the spec's 23 (review-volume, perfect-run, time-of-day, level, goal-streak, and the dormant quiz/quest/freeze ones) have **no spec rewards** — their XP/coins are the ones approved in the Phase 4 conversation and are listed in `version/0.5.0.md`; spec'd rewards are untouched. The full 41-id list lives in `server/src/services/achievements.js` (`ACHIEVEMENT_DEFS`), seeded to the `achievements` collection (§8 structured criteria).
+
+### Milestone names (open question #2 resolved, Phase 4)
+
+The §7.1 bar's next-milestone labels are **Wakaba 14 · Sakura 30 · Hanami 60 · Momiji 100** ("10 days to Sakura" at streak 20). The 7/30/100 **celebration achievements** keep their own names — **Kokoro / Tsuki / Kaze** — so a streak of 30 reads "Sakura" on the bar and unlocks "Tsuki" at the milestone; they are different signs of the same progress, not renames.
+
+### "Learn N kanji" counts first-reviewed kanji; unlocks are permanent
+
+`LEARNED` criteria count pairs with `lastReviewedAt != null` — the first review of a card marks the kanji learned (so D8's "Remove from review" never regresses an unlocked achievement, and the count survives history eviction since `lastReviewedAt` is kept on undo). Achievement unlocks are **never re-locked** by anything — including undo (which restores XP/level/counters but not unlocks).
+
+### Unlock feedback: celebration modal only for level-up + streak milestones
+
+Per the owner's Phase 4 decisions: the **level-up modal** (§11.2) and **streak-milestone celebrations** at 7/30/100 (§11.4) are the only modals; every other unlock fires a **compact toast** with name (romaji + 漢字/かな) + rewards. The milestone modal _folds in_ its own achievement's toast (Kokoro/Tsuki/Kaze aren't double-announced). In `/review` the modal is deferred to the session-summary screen so the card rhythm (§7.2) is never interrupted mid-card; the dashboard fires toasts immediately after its repair action.
+
+### `dailyGoalXP`: default 50 + option 20 added (§11.6 correction, not a deviation)
+
+§11.6 fixes the daily goal's default at **50 XP** with options **20/50/100/200**. Phase 1 shipped `default: 100` and an enum `[50, 100, 200]` (20 missing) in `User.preferences` and `GamificationProfile`. No settings UI ever existed to customize the goal, so `scripts/migrate-050.js` flips every stored `100 → 50` blanket-safe (owner-confirmed), both schemas now derive from shared `DAILY_GOAL_OPTIONS` / `DEFAULT_DAILY_GOAL_XP`, and `PATCH /users/me/preferences` mirrors goal changes onto the profile (reviews read the mirror).
+
+### Achievement XP counts toward the level — never toward the goal or the streak
+
+Achievement rewards flow through the same **1.5× boost at award time** ("all XP", §11.1) and into `totalXP`, then the level is recomputed once — so an unlock can trigger the level-up modal. They deliberately **do not** feed `dailyXPProgress` (the goal is review XP per §11.1's award list) nor the streak (review-driven per §11.4). Coins land on the profile immediately.
+
+### Gamification counters ride on the profile (additive §8 fields)
+
+One review appends history; it also updates cheap profile counters that make most criteria O(1): `totalReviews`, `goalStreak` + `goalMetDate` (consecutive goal days), `currentPerfectRun`, `dailyReviewsCount` + `dailyAgainToday` + `dailyCountersDate` (reset per local day), `reviewsBefore8` / `reviewsAfter23` (local hour at award), `streakFreezes` (store grants these in Phase 7 — the consumption rule exists and is unit-tested now), `lastStreakRepairAt`, and `achievementUnlocks` (id → unlock Date for §6.10's profile tab; `unlockedAchievementIds` stays the §8-canonical list). The heavy signals (learned / mastered / per-JLPT mastery / 30-day accuracy) are computed by one `$facet` aggregation **only when a locked achievement actually needs them**.
+
+### Undo restores the Phase 4 counters exactly (`gami` snapshot)
+
+Following the Phase 3 full-state-snapshot pattern, each history entry now also stores `gami` (the counters listed above, taken before the award), so `refundReviewXP` restores totalReviews/perfect-run/goal-streak/time-of-day counters exactly alongside XP/level/dailyXP. Streaks still never revert; unlocks stay unlocked.
+
+### Quiz/quest/freeze criteria ship dormant
+
+The criteria vocabulary includes `QUIZ_ACCURACY`, `SPRINT`, `STROKE_PERFECT`, `DRAWING_SCORE`, `QUEST_SWEEP`, `QUIZ_MODES_ALL`, `FREEZE_USED` (Phases 5–7 producers). The evaluator skips them and the achievements endpoint returns `progress: null` for them (§6.10 "Locked" without a progress bar) — they unlock when their systems land, no data migration needed.
+
+### Dashboard dot grid: Monday-anchored labels over the server's rolling 7 days
+
+`GET /gamification/profile` returns the **rolling last 7 local days** (aggregated from `history[].reviewedAt` in the user's timezone — the same source the Phase 5 heatmap uses); the client lays the slots out **Monday → Sunday with M T W T F S S letters** (§7.1's fixed week order) by matching its own week keys against that map. The due card reuses `/progress/due` (`total` + `nextDueAt`, `limit=1`); the empty state deep-links to `/learn?jlpt=5`, which Learn now reads from the URL.
+
 ## Implementation notes (deployment — owner-directed early hosting)
 
 ### Live preview after every phase (2026-10-22, owner request)
@@ -185,6 +231,6 @@ The owner asked to host the site online from Phase 2 onward, watching it grow ph
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.
-2. **Milestone names** — is 30 = "Sakura"? What are 14 / 60 / 100?
+2. ~~**Milestone names**~~ — resolved Phase 4: bar labels are **Wakaba 14 · Sakura 30 · Hanami 60 · Momiji 100**; the 7/30/100 achievements keep **Kokoro/Tsuki/Kaze**.
 3. **Quest titles** — §6.7 lists 12 phrases (e.g. "Review 10 cards"); are they the titles themselves, or do you want separate title + description copy?
 4. **Password reset** — §7.11 shows a "Forgot password?" link but §9 has no reset endpoints. In scope (Phase 8 polish?) or drop the link?

@@ -201,13 +201,18 @@ describe('POST /api/v1/progress/review', () => {
     expect(progress).toMatchObject({ state: 'review', interval: 1, repetitions: 1 });
     expect(xp.awarded).toBe(30); // Good 10 + first-review 20
     expect(xp.bonuses).toContain('firstReview');
-    expect(xp.totalXP).toBe(30);
+    // Phase 4: the first review also unlocks Hajimemashite (はじめまして, +20 XP).
+    expect(xp.totalXP).toBe(50);
     expect(xp.currentStreak).toBe(1);
+    expect(xp.title).toBe('Seedling');
+    expect(xp.newlyUnlocked.map((a) => a.id)).toContain('hajimemashite');
 
     const stored = await UserProgress.findOne({ _id: progress.id }).lean();
     expect(stored.history).toHaveLength(1);
     expect(stored.history[0]).toMatchObject({ rating: 2, xpAwarded: 30 });
     expect(stored.history[0].previous.state).toBe('new');
+    // The gami snapshot rides along for the undo's exact counter restore.
+    expect(stored.history[0].gami).toMatchObject({ totalReviews: 0, dailyReviewsCount: 0 });
   });
 
   it('does not re-award first-review XP later the same day', async () => {
@@ -298,7 +303,8 @@ describe('POST /api/v1/review/:cardId/undo (§6.5)', () => {
       .set('Cookie', jar);
     expect(res.status).toBe(200);
     expect(res.body.data.progress).toMatchObject({ state: 'new', interval: 0 });
-    expect(res.body.data.xp).toMatchObject({ refunded: 30, totalXP: 0 });
+    // Refund is the review XP exactly; Hajimemashite's +20 stays (permanent).
+    expect(res.body.data.xp).toMatchObject({ refunded: 30, totalXP: 20 });
 
     const stored = await UserProgress.findOne({ _id: cardId }).lean();
     expect(stored.history).toHaveLength(0);

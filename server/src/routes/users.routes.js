@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { DAILY_GOAL_OPTIONS } from '@kanjigarden/shared';
 import { User, publicUser } from '../models/User.js';
 import { ensureGamificationProfile, gamificationSummary } from '../models/GamificationProfile.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -9,7 +10,8 @@ export const usersRouter = Router();
 
 const preferencesSchema = z
   .object({
-    dailyGoalXP: z.union([z.literal(50), z.literal(100), z.literal(200)]).optional(),
+    // §11.6: 20/50/100/200 (Phase 4 correction — 20 was missing, default was 100).
+    dailyGoalXP: z.union(DAILY_GOAL_OPTIONS.map((v) => z.literal(v))).optional(),
     dailyReviewLimit: z.number().int().min(1).max(200).optional(),
     theme: z.enum(['auto', 'light', 'dark']).optional(),
     furigana: z.boolean().optional(),
@@ -51,6 +53,12 @@ usersRouter.patch('/me/preferences', requireAuth, async (req, res, next) => {
     if (!user) return fail(res, 401, 'TOKEN_INVALID', 'Your session expired. Sign in again.');
     Object.assign(user.preferences, parsed.data);
     await user.save();
+    // The profile mirrors the goal setting (reviews read the mirror).
+    if (parsed.data.dailyGoalXP !== undefined) {
+      const profile = await ensureGamificationProfile(user._id, user.preferences.dailyGoalXP);
+      profile.dailyGoalXP = user.preferences.dailyGoalXP;
+      await profile.save();
+    }
     return ok(res, { preferences: user.preferences });
   } catch (err) {
     return next(err);

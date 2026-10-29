@@ -10,6 +10,8 @@ import { useToast } from '../components/ui/Toast.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { MobileTabBar } from '../components/AppShell.jsx';
+import { CelebrationModal, titleChanged } from '../components/CelebrationModal.jsx';
+import { MILESTONE_ACHIEVEMENT, unlockToastMessage } from '../lib/gamification.js';
 
 /** Review session — prompt.md §7.2 (full-screen, distraction-free).
  *  Global top nav is replaced by a minimal bar (back · counter · ?); mobile
@@ -195,6 +197,7 @@ export default function Review() {
   const [submitting, setSubmitting] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [undoView, setUndoView] = useState(null); // { rating } shown on banner
+  const [celebration, setCelebration] = useState(null); // §11.2/§11.4, shown on summary
   const undoRef = useRef(null); // { snapshot, cardId } while the window is open
   const undoTimerRef = useRef(null);
 
@@ -268,7 +271,35 @@ export default function Review() {
         currentStreak: result.xp.currentStreak,
         currentLevel: result.xp.level,
         xpToNextLevel: result.xp.xpToNextLevel,
+        coins: result.xp.coins,
       });
+
+      // Phase 4: achievement unlocks toast immediately; level-up and streak
+      // milestones (§11.2/§11.4) celebrate on the summary screen so the
+      // session's rhythm is never interrupted mid-card. Only the achievement
+      // whose name the visible modal already shows skips its toast.
+      const celebrationKind = result.xp.leveledUp ? 'levelUp' : 'streak';
+      const foldedId =
+        celebrationKind === 'streak' && result.xp.streakMilestone
+          ? MILESTONE_ACHIEVEMENT[result.xp.streakMilestone]
+          : null;
+      for (const achievement of result.xp.newlyUnlocked ?? []) {
+        if (achievement.id === foldedId) continue; // folded into the modal
+        push({ message: unlockToastMessage(achievement), tone: 'success' });
+      }
+      if (result.xp.leveledUp || result.xp.streakMilestone) {
+        setCelebration({
+          kind: celebrationKind,
+          level: result.xp.level,
+          title: result.xp.title,
+          newTitle: titleChanged(result.xp.previousLevel, result.xp.level),
+          streakDays: result.xp.streakMilestone,
+          achievement: foldedId
+            ? (result.xp.newlyUnlocked ?? []).find((a) => a.id === foldedId)
+            : null,
+        });
+      }
+
       setSession((prev) => ({
         ...prev,
         queue: prev.queue.slice(1),
@@ -531,6 +562,21 @@ export default function Review() {
               {session.reviewAgainEmpty ? 'All caught up' : 'Review again'}
             </Button>
           </section>
+        ) : null}
+
+        {/* Level-up / streak-milestone celebration (§11.2/§11.4) — deferred
+            to the summary screen so mid-card flow stays untouched. */}
+        {session.phase === 'summary' && celebration ? (
+          <CelebrationModal
+            open
+            kind={celebration.kind}
+            level={celebration.level}
+            title={celebration.title}
+            newTitle={celebration.newTitle}
+            streakDays={celebration.streakDays}
+            achievement={celebration.achievement}
+            onClose={() => setCelebration(null)}
+          />
         ) : null}
 
         {/* Keyboard footer (desktop only, §7.2) */}

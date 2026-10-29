@@ -2,9 +2,10 @@ import { Schema, model } from 'mongoose';
 import { EASE } from '../services/srs.js';
 import { MASTERED_INTERVAL_DAYS } from '@kanjigarden/shared';
 
-/** history[] entry — §8 fields plus two superset additions (DECISIONS.md):
+/** history[] entry — §8 fields plus superset additions (DECISIONS.md):
  *  `previous` powers §6.5 undo ("compensating transaction"), `xpAwarded`
- *  makes that undo's XP refund exact. */
+ *  makes that undo's XP refund exact, and `gami` snapshots the Phase 4
+ *  gamification counters so an undo also restores those exactly. */
 const historyEntrySchema = new Schema(
   {
     reviewedAt: { type: Date, required: true },
@@ -19,6 +20,17 @@ const historyEntrySchema = new Schema(
       repetitions: { type: Number },
       lapses: { type: Number },
       dueDate: { type: Date },
+    },
+    gami: {
+      totalReviews: { type: Number },
+      dailyReviewsCount: { type: Number },
+      dailyAgainToday: { type: Boolean },
+      currentPerfectRun: { type: Number },
+      reviewsBefore8: { type: Number },
+      reviewsAfter23: { type: Number },
+      goalStreak: { type: Number },
+      goalMetDate: { type: String },
+      dailyCountersDate: { type: String },
     },
   },
   { _id: false }

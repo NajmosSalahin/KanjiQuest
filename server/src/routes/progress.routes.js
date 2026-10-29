@@ -5,7 +5,7 @@ import { User } from '../models/User.js';
 import { Kanji } from '../models/Kanji.js';
 import { UserProgress, publicProgress } from '../models/UserProgress.js';
 import { scheduleReview } from '../services/srs.js';
-import { awardReviewXP, refundReviewXP } from '../services/xp.js';
+import { awardXP, refundReviewXP } from '../services/xp.js';
 import { ok, noContent, fail } from '../utils/envelope.js';
 
 /** §6.5 undo: client window is 4s; the server backstop is wider to absorb
@@ -199,7 +199,7 @@ progressRouter.post('/review', async (req, res, next) => {
       now.getTime()
     );
 
-    const xp = await awardReviewXP(user, rating, now);
+    const xp = await awardXP(user, 'review', { rating }, now);
 
     progress.state = nextCard.state;
     progress.interval = nextCard.interval;
@@ -215,6 +215,7 @@ progressRouter.post('/review', async (req, res, next) => {
       newInterval: nextCard.interval,
       xpAwarded: xp.awarded,
       previous,
+      gami: xp.gami, // Phase 4 counters snapshot — exact undo restore
     });
     if (progress.history.length > 100) progress.history = progress.history.slice(-100);
     await progress.save();
@@ -243,7 +244,7 @@ reviewRouter.post('/:cardId/undo', async (req, res, next) => {
     }
 
     const user = await User.findById(req.userId).select('timezone preferences').lean();
-    const refund = await refundReviewXP(user, last.xpAwarded ?? 0);
+    const refund = await refundReviewXP(user, last.xpAwarded ?? 0, last.gami);
 
     progress.state = last.previous.state;
     progress.interval = last.previous.interval;
