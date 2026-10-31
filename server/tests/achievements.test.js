@@ -64,9 +64,9 @@ describe('D11 roster (41 achievements)', () => {
     expect(loaded).toHaveLength(41);
   });
 
-  it('marks quiz/quest/store criteria dormant until those phases land', () => {
+  it('activates quests in Phase 5 while quiz/store criteria stay dormant', () => {
     expect(DORMANT.has(CRITERIA.QUIZ_ACCURACY)).toBe(true);
-    expect(DORMANT.has(CRITERIA.QUEST_SWEEP)).toBe(true);
+    expect(DORMANT.has(CRITERIA.QUEST_SWEEP)).toBe(false);
     expect(DORMANT.has(CRITERIA.FREEZE_USED)).toBe(true);
     expect(DORMANT.has(CRITERIA.STREAK)).toBe(false);
   });

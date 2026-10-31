@@ -7,6 +7,7 @@ vi.mock('../src/services/furigana.js', () => ({
   warmFurigana: () => {},
 }));
 
+import { LEVEL_TITLES } from '@kanjigarden/shared';
 import { createApp } from '../src/app.js';
 import { Kanji } from '../src/models/Kanji.js';
 import { User } from '../src/models/User.js';
@@ -202,9 +203,14 @@ describe('POST /api/v1/progress/review', () => {
     expect(xp.awarded).toBe(30); // Good 10 + first-review 20
     expect(xp.bonuses).toContain('firstReview');
     // Phase 4: the first review also unlocks Hajimemashite (はじめまして, +20 XP).
-    expect(xp.totalXP).toBe(50);
+    // Phase 5 quest rewards are separate and were already claimed above; include
+    // them in the final total rather than assuming a quest-free day.
+    const questRewardXP =
+      (res.body.data.questCompletions ?? []).reduce((sum, q) => sum + (q.xpAwarded ?? 0), 0) +
+      (res.body.data.questSweep?.awarded ?? 0);
+    expect(xp.totalXP).toBe(50 + questRewardXP);
     expect(xp.currentStreak).toBe(1);
-    expect(xp.title).toBe('Seedling');
+    expect(xp.title).toBe(LEVEL_TITLES[xp.level - 1]);
     expect(xp.newlyUnlocked.map((a) => a.id)).toContain('hajimemashite');
 
     const stored = await UserProgress.findOne({ _id: progress.id }).lean();

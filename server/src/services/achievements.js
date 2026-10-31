@@ -45,7 +45,6 @@ export const DORMANT = new Set([
   CRITERIA.SPRINT,
   CRITERIA.STROKE_PERFECT,
   CRITERIA.DRAWING_SCORE,
-  CRITERIA.QUEST_SWEEP,
   CRITERIA.QUIZ_MODES_ALL,
   CRITERIA.FREEZE_USED,
 ]);
@@ -635,6 +634,8 @@ export function criteriaMet(criteria, signals) {
       );
     case CRITERIA.STREAK_REPAIR:
       return (signals.repairCount ?? 0) >= criteria.threshold;
+    case CRITERIA.QUEST_SWEEP:
+      return (signals.questSweep ?? 0) >= 1;
     case CRITERIA.UNLOCK_COUNT:
       return signals.unlockedCount >= criteria.threshold;
     default:
@@ -680,6 +681,8 @@ export function progressFor(criteria, signals) {
       };
     case CRITERIA.STREAK_REPAIR:
       return { current: signals.repairCount ?? 0, target: criteria.threshold };
+    case CRITERIA.QUEST_SWEEP:
+      return { current: signals.questSweep ?? 0, target: 1 };
     case CRITERIA.UNLOCK_COUNT:
       return { current: signals.unlockedCount, target: criteria.threshold };
     default:
@@ -700,10 +703,17 @@ function boosted(profile, amount, now) {
  * unlocks plus their XP total (already boosted) for the caller to fold into
  * totalXP and recompute the level.
  */
-export async function evaluateAchievements(profile, user, { now = new Date(), repairCount } = {}) {
+export async function evaluateAchievements(
+  profile,
+  user,
+  { now = new Date(), repairCount, questSweep } = {}
+) {
   const defs = await loadAchievementDefs();
   const unlocked = new Set(profile.unlockedAchievementIds);
-  const extra = repairCount !== undefined ? { repairCount } : {};
+  const extra = {
+    ...(repairCount !== undefined ? { repairCount } : {}),
+    ...(questSweep ? { questSweep } : {}),
+  };
   const signals = profileSignals(profile, extra);
 
   const needsAggregates = defs.some(

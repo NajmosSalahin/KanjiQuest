@@ -164,6 +164,7 @@ export async function awardXP(user, event, payload, now = new Date()) {
     previousLevel,
     leveledUp: level > previousLevel,
     coins: profile.coins,
+    currentPerfectRun: profile.currentPerfectRun,
     streakMilestone,
     newlyUnlocked: newly,
     gami,
@@ -176,15 +177,18 @@ export async function awardXP(user, event, payload, now = new Date()) {
  * NOT reverted — showing up still counts, and the 4-second undo window can't
  * un-show; unlocked achievements are permanent (DECISIONS.md).
  */
-export async function refundReviewXP(user, xpAwarded, gami) {
+export async function refundReviewXP(user, xpAwarded, gami, extra = {}) {
   const profile = await ensureGamificationProfile(
     user._id,
     user.preferences?.dailyGoalXP ?? DEFAULT_DAILY_GOAL_XP
   );
-  const totalXP = Math.max(0, profile.totalXP - xpAwarded);
+  const questXp = Math.max(0, extra.xp ?? 0);
+  const questCoins = Math.max(0, extra.coins ?? 0);
+  const totalXP = Math.max(0, profile.totalXP - xpAwarded - questXp);
   const { level, xpToNextLevel: toNext } = computeLevel(totalXP);
   profile.totalXP = totalXP;
   profile.dailyXPProgress = Math.max(0, profile.dailyXPProgress - xpAwarded);
+  profile.coins = Math.max(0, profile.coins - questCoins);
   profile.currentLevel = level;
   profile.xpToNextLevel = toNext;
   if (gami) {
@@ -201,8 +205,13 @@ export async function refundReviewXP(user, xpAwarded, gami) {
   await profile.save();
   return {
     refunded: xpAwarded,
+    questRefunded: questXp,
+    coinsRefunded: questCoins,
     totalXP,
     dailyXPProgress: profile.dailyXPProgress,
     level,
+    xpToNextLevel: toNext,
+    title: LEVEL_TITLES[level - 1],
+    coins: profile.coins,
   };
 }

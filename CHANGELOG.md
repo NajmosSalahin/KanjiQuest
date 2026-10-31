@@ -6,6 +6,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-10-31 — Daily quests + statistics (Phase 5) · tag `phase-5-complete`
+
+- **Daily quests (§6.7 / D12):** all 12 defs seeded, three deterministic per user + local day, persisted across the day and reset at local midnight. Phase 5 selects the 8 review-completable defs; the 4 quiz defs ship `phase: 6`. Progress tracks review counts, 5-in-a-row, first-learns, daily XP, due-clear, and before-10am/after-8pm; per-quest rewards (20–50 XP + 5–15 coins) and the **+30 daily sweep** claim exactly once. Quest/sweep XP counts toward `totalXP`/level but not the daily goal or streak.
+- **Undo (§6.5):** review history stores a `questUndo` snapshot; undo restores quest progress/completion/reward-claim/sweep and refunds direct quest/sweep XP + coins. Achievement unlocks stay permanent.
+- **Statistics (§7.7 / §9):** local-day **365-day heatmap**, **next-30-day forecast** (overdue folded into today), **30-day accuracy**, **N5–N3 stacked JLPT statuses** (untracked = new), and **365-day best/worst with ≥10 reviews**; `/stats` aggregate plus validated `/heatmap`, `/forecast`, `/accuracy`, `/jlpt`, `/best-worst` endpoints.
+- **Dashboard (§7.1):** the Daily quests section — countdown, custom icons, progress bars, rewards, completed/sweep states, skeletons, error/retry — replaces the placeholder duplicate.
+- **`/stats` screen:** all five spec sections inside the app shell, with token-only colors, 30-day accuracy average, skeletons, and error state.
+- **Feedback & data:** `/review` quest-completion and sweep toasts + query invalidation; `QuestDef`/`UserQuest` collections with indexes, `seed-quests` and `migrate-060` scripts.
+- **Tests:** server **156** (+9 — new quests ×6 + stats ×3), client **56** (+6 — Stats ×4 + Dashboard quests ×2), live smoke **43 checks** (+6). Details: [version/0.6.0.md](version/0.6.0.md)
+
 ## [0.5.0] — 2026-10-28 — Gamification core (Phase 4) · tag `phase-4-complete`
 
 - **`awardXP` formalized (§11.1):** `server/src/services/xp.js` becomes the single XP event router — review XP with the 1.5× boost applied to **all** XP, level recompute (`computeLevel`), achievement evaluation in the same pass, and a returned snapshot (`newlyUnlocked`, `streakMilestone`, `leveledUp`, prior level/title, profile counters) that `refundReviewXP` restores exactly on undo (unlocks themselves are permanent).

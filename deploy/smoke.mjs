@@ -1,5 +1,5 @@
 /**
- * Live smoke test — run after every phase's deploy (37 checks).
+ * Live smoke test — run after every phase's deploy (43 checks).
  *
  *   node deploy/smoke.mjs                       # defaults to https://kanjiquest.vercel.app
  *   node deploy/smoke.mjs https://my-app.vercel.app
@@ -11,7 +11,10 @@
  * review+XP, undo, re-review, suspend, stats, D8 delete, myProgress, D6
  * learning join, anonymous invariants), Phase 4 gamification (profile with the
  * §11.6 goal default, 41 achievements + first-review unlock, D10 repair
- * negative path, anonymous guard), logout, SPA fallback, security headers.
+ * negative path, anonymous guard), Phase 5 daily quests (three persisted
+ * quests + sweep reward) and statistics (365 heatmap, next-30 forecast,
+ * 30-day accuracy, N5–N3 JLPT, best/worst, query validation), logout, SPA
+ * fallback, security headers.
  *
  * Registers a throwaway `smoke+<epoch>@example.com` user; when a root `.env`
  * with MONGODB_URI is found (local runs), it deletes that user + sessions +
@@ -215,15 +218,27 @@ let registerSetCookies = [];
   const r = await call('/api/v1/progress/review', { method: 'POST', body: { cardId: card.id, rating: 2 } });
   const p = r.json?.data?.progress;
   const xp = r.json?.data?.xp;
+  const questRewards =
+    (r.json?.data?.questCompletions ?? []).reduce((sum, q) => sum + (q.xpAwarded ?? 0), 0) +
+    (r.json?.data?.questSweep?.awarded ?? 0);
   check(
     'progress/review Good -> SRS + first-review XP (30) + streak 1',
     r.status === 200 && p?.state === 'review' && p?.interval === 1 && xp?.awarded === 30 && xp?.currentStreak === 1,
     `state=${p?.state} interval=${p?.interval} xp=${xp?.awarded}`
   );
   check(
-    'first review unlocks Hajimemashite (+20) -> totalXP 50',
-    xp?.totalXP === 50 && (xp?.newlyUnlocked ?? []).some((a) => a.id === 'hajimemashite'),
-    `totalXP=${xp?.totalXP} unlocked=${(xp?.newlyUnlocked ?? []).map((a) => a.id).join(',')}`
+    'first review unlocks Hajimemashite (+20) -> totalXP 50 (+ quest rewards)',
+    xp?.totalXP === 50 + questRewards &&
+      (xp?.newlyUnlocked ?? []).some((a) => a.id === 'hajimemashite'),
+    `totalXP=${xp?.totalXP} questRewards=${questRewards} unlocked=${(xp?.newlyUnlocked ?? []).map((a) => a.id).join(',')}`
+  );
+  check(
+    'progress/review -> 3-quest snapshot + questSweep field',
+    r.status === 200 &&
+      (r.json?.data?.quests ?? []).length === 3 &&
+      Array.isArray(r.json?.data?.questCompletions) &&
+      'questSweep' in (r.json?.data ?? {}),
+    `quests=${r.json?.data?.quests?.length} completions=${r.json?.data?.questCompletions?.length}`
   );
 
   const u = await call(`/api/v1/review/${card.id}/undo`, { method: 'POST' });
@@ -237,10 +252,15 @@ let registerSetCookies = [];
   );
 
   const again = await call('/api/v1/progress/review', { method: 'POST', body: { cardId: card.id, rating: 2 } });
+  const againRewards =
+    (again.json?.data?.questCompletions ?? []).reduce((sum, q) => sum + (q.xpAwarded ?? 0), 0) +
+    (again.json?.data?.questSweep?.awarded ?? 0);
   check(
-    're-review after undo -> 10 XP, totalXP 30',
-    again.status === 200 && again.json?.data?.xp?.awarded === 10 && again.json?.data?.xp?.totalXP === 30,
-    `xp=${again.json?.data?.xp?.awarded}`
+    're-review after undo -> 10 XP, totalXP 30 (+ quest rewards)',
+    again.status === 200 &&
+      again.json?.data?.xp?.awarded === 10 &&
+      again.json?.data?.xp?.totalXP === 30 + againRewards,
+    `xp=${again.json?.data?.xp?.awarded} totalXP=${again.json?.data?.xp?.totalXP} questRewards=${againRewards}`
   );
 
   const due2 = await call('/api/v1/progress/due');
@@ -263,6 +283,65 @@ let registerSetCookies = [];
     'progress/stats totals + accuracy',
     r.status === 200 && d?.total === 3 && d?.totalReviews >= 1 && typeof d?.accuracy === 'number',
     `total=${d?.total} reviews=${d?.totalReviews}`
+  );
+}
+
+// 20b. Phase 5 (§6.7): three persisted quests + sweep reward
+{
+  const first = await call('/api/v1/quests/today');
+  const second = await call('/api/v1/quests/today');
+  const a = first.json?.data?.quests ?? [];
+  const b = second.json?.data?.quests ?? [];
+  const same = a.length === 3 && a.map((q) => q.id).join(',') === b.map((q) => q.id).join(',');
+  const shape = a.every(
+    (q) =>
+      q.id &&
+      q.title &&
+      Number.isFinite(q.progress) &&
+      Number.isFinite(q.target) &&
+      Number.isFinite(q.xpReward) &&
+      Number.isFinite(q.coinReward)
+  );
+  check(
+    'quests/today -> 3 persisted quests + +30 sweep',
+    first.status === 200 && same && shape && first.json?.data?.sweepReward === 30,
+    `count=${a.length} ids=${a.map((q) => q.id).join(',')} sweep=${first.json?.data?.sweepReward}`
+  );
+}
+
+// 20c. Phase 5 (§7.7): all five stats sections + forward forecast + validation
+{
+  const r = await call('/api/v1/stats');
+  const d = r.json?.data;
+  const levels = (d?.jlpt ?? []).map((row) => row.level).join(',');
+  check(
+    'stats -> heatmap 365, forecast 30, accuracy 30, JLPT N5–N3, best/worst',
+    r.status === 200 &&
+      d?.heatmap?.length === 365 &&
+      d?.forecast?.length === 30 &&
+      d?.accuracy?.points?.length === 30 &&
+      levels === '5,4,3' &&
+      Array.isArray(d?.bestWorst?.best) &&
+      Array.isArray(d?.bestWorst?.worst) &&
+      (d?.heatmap?.at(-1)?.reviews ?? 0) >= 1 &&
+      d?.forecast?.reduce((sum, day) => sum + day.count, 0) >= 1,
+    `heatmap=${d?.heatmap?.length} forecast=${d?.forecast?.length} levels=${levels}`
+  );
+
+  const firstDay = d?.forecast?.[0]?.date;
+  const lastDay = d?.forecast?.at(-1)?.date;
+  const forwardDays = firstDay && lastDay ? Math.round((Date.parse(lastDay) - Date.parse(firstDay)) / 86_400_000) : -1;
+  check(
+    'stats/forecast -> next 30 days (overdue folded into today)',
+    firstDay === d?.heatmap?.at(-1)?.date && forwardDays === 29,
+    `first=${firstDay} last=${lastDay} span=${forwardDays}`
+  );
+
+  const bad = await call('/api/v1/stats/accuracy?days=0');
+  check(
+    'stats/accuracy -> 422 VALIDATION_ERROR on days=0',
+    bad.status === 422 && bad.json?.error?.code === 'VALIDATION_ERROR',
+    `status=${bad.status} code=${bad.json?.error?.code}`
   );
 }
 
@@ -350,6 +429,13 @@ let registerSetCookies = [];
   check('anonymous /progress/due -> 401', due.status === 401, `status=${due.status}`);
   const gp = await call('/api/v1/gamification/profile');
   check('anonymous /gamification/profile -> 401', gp.status === 401, `status=${gp.status}`);
+  const quests = await call('/api/v1/quests/today');
+  const stats = await call('/api/v1/stats');
+  check(
+    'anonymous /quests/today + /stats -> 401',
+    quests.status === 401 && stats.status === 401,
+    `quests=${quests.status} stats=${stats.status}`
+  );
 }
 
 // 25. SPA fallback

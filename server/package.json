@@ -1,6 +1,6 @@
 {
   "name": "@kanjigarden/server",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,9 @@
     "seed-radicals": "node src/scripts/seed-radicals.js",
     "seed-kanji": "node --max-old-space-size=6144 src/scripts/seed-kanji.js",
     "seed-achievements": "node src/scripts/seed-achievements.js",
-    "migrate-050": "node src/scripts/migrate-050.js"
+    "migrate-050": "node src/scripts/migrate-050.js",
+    "migrate-060": "node src/scripts/migrate-060.js",
+    "seed-quests": "node src/scripts/seed-quests.js"
   },
   "dependencies": {
     "@kanjigarden/shared": "*",

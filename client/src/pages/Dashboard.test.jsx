@@ -71,13 +71,63 @@ const DUE_EMPTY = {
   limit: 1,
   nextDueAt: new Date('2026-03-12T14:30:00Z').toISOString(),
 };
+const QUESTS = {
+  date: '2026-03-12',
+  quests: [
+    {
+      id: 'review-10',
+      title: 'Review 10 cards',
+      description: 'Complete 10 review cards today.',
+      progress: 4,
+      target: 10,
+      completed: false,
+      xpReward: 25,
+      coinReward: 5,
+      xpAwarded: 0,
+      coinsAwarded: 0,
+    },
+    {
+      id: 'learn-3',
+      title: 'Learn 3 new kanji',
+      description: 'Review 3 kanji for the first time today.',
+      progress: 3,
+      target: 3,
+      completed: true,
+      xpReward: 30,
+      coinReward: 8,
+      xpAwarded: 30,
+      coinsAwarded: 8,
+    },
+    {
+      id: 'before-10',
+      title: 'Early bird',
+      description: 'Review before 10am.',
+      progress: 0,
+      target: 1,
+      completed: false,
+      xpReward: 20,
+      coinReward: 5,
+      xpAwarded: 0,
+      coinsAwarded: 0,
+    },
+  ],
+  allDone: false,
+  sweepAwarded: false,
+  sweepReward: 30,
+};
 
-function mockApi({ profile = makeProfile(), due = DUE_POSITIVE, stats = { total: 40 } } = {}) {
+function mockApi({
+  profile = makeProfile(),
+  due = DUE_POSITIVE,
+  stats = { total: 40 },
+  quests = QUESTS,
+} = {}) {
   api.mockReset();
   api.mockImplementation(async (path, opts = {}) => {
     if (path === '/gamification/profile') return profile;
     if (path.startsWith('/progress/due')) return due;
     if (path === '/progress/stats') return stats;
+    if (path === '/quests/today') return quests;
     if (path === '/gamification/streak/repair' && opts.method === 'POST') return REPAIR_RESULT;
     throw new Error(`unexpected api path: ${path}`);
   });
@@ -171,6 +221,39 @@ describe('Dashboard (§7.1)', () => {
     await screen.findByText('due now');
     await userEvent.click(screen.getByRole('button', { name: /Start review/ }));
     expect(await screen.findByText('review page')).toBeTruthy();
+  });
+
+  it('renders the three daily quests with progress, rewards, and completed state', async () => {
+    renderDashboard();
+
+    expect(await screen.findByRole('heading', { name: 'Daily quests' })).toBeTruthy();
+    expect(screen.getByText(/Resets in \d+h \d+m/)).toBeTruthy();
+    expect(screen.getByText('Review 10 cards')).toBeTruthy();
+    expect(screen.getByText('4/10')).toBeTruthy();
+    // Reward text shares one span with the coin amount, so match the
+    // normalized node content rather than an exact standalone string.
+    expect(screen.getByText(/25 XP/)).toBeTruthy();
+    // Two open quests both pay 5 coins.
+    expect(screen.getAllByText(/5 coins/)).toHaveLength(2);
+
+    const completed = screen.getByText('Learn 3 new kanji');
+    expect(completed.className).toContain('line-through');
+    expect(screen.getByText('+30 XP')).toBeTruthy();
+    expect(screen.getByText('Complete all three for +30 XP.')).toBeTruthy();
+  });
+
+  it('shows the sweep state when all quests are complete', async () => {
+    mockApi({
+      quests: {
+        ...QUESTS,
+        quests: QUESTS.quests.map((quest) => ({ ...quest, completed: true })),
+        allDone: true,
+        sweepAwarded: true,
+      },
+    });
+    renderDashboard();
+
+    expect(await screen.findByText(/Daily sweep complete — \+30 XP/)).toBeTruthy();
   });
 
   it('renders the caught-up line with the next review time (§7.1)', async () => {

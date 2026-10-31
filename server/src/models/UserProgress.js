@@ -32,6 +32,10 @@ const historyEntrySchema = new Schema(
       goalMetDate: { type: String },
       dailyCountersDate: { type: String },
     },
+    questUndo: {
+      type: Schema.Types.Mixed,
+      default: undefined,
+    },
   },
   { _id: false }
 );

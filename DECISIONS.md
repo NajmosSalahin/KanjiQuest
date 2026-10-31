@@ -214,7 +214,22 @@ The criteria vocabulary includes `QUIZ_ACCURACY`, `SPRINT`, `STROKE_PERFECT`, `D
 
 `GET /gamification/profile` returns the **rolling last 7 local days** (aggregated from `history[].reviewedAt` in the user's timezone — the same source the Phase 5 heatmap uses); the client lays the slots out **Monday → Sunday with M T W T F S S letters** (§7.1's fixed week order) by matching its own week keys against that map. The due card reuses `/progress/due` (`total` + `nextDueAt`, `limit=1`); the empty state deep-links to `/learn?jlpt=5`, which Learn now reads from the URL.
 
-## Implementation notes (deployment — owner-directed early hosting)
+## Implementation notes (Phase 5 — Daily quests + statistics)
+
+### D12: quest catalog, selection gate, reward accounting, undo, and stats windows (owner-approved)
+
+The owner approved the Phase 5 implementation direction ("go"). The details:
+
+- **Catalog:** all 12 §6.7 definitions are seeded (`quests` collection, `seed-quests.js`). Phase 5 selects only the **8 review-completable** definitions; the 4 quiz definitions carry `phase: 6` and stay dormant until quiz events exist, so no progress is ever fabricated.
+- **Daily selection:** three unique quests per user + local day, chosen by a deterministic seeded shuffle of `userId:date`. Rows persist in `userQuests` with the local `YYYY-MM-DD` key, so they survive page reloads and reset only at the user's local midnight.
+- **Rewards:** 20–50 XP + 5–15 coins per quest, plus the **+30 daily sweep**. Quest/sweep XP flows into `totalXP` and level (with the 1.5× boost at award time) but deliberately **not** into `dailyXPProgress` or the streak — same accounting rule as achievement XP (§11.1).
+- **Undo:** the review's history entry stores a `questUndo` snapshot of all three rows before the event plus the direct quest/sweep XP and coins awarded. Undo restores progress/completion/reward-claim/sweep flags and refunds those rewards exactly; achievement unlocks remain permanent (as in Phase 4).
+- **Stats (§7.7):** all buckets use the user's local day. Heatmap = last 365 days; accuracy = last 30 days with Good/Easy (rating ≥ 2) as "good"; forecast = **next** 30 days with overdue cards folded into today; JLPT = all N5–N3 seeded kanji, untracked counted as `new`; best/worst = 365 days, only days with ≥ 10 reviews.
+- **Aggregate + sub-endpoints:** `/stats` returns all five sections in one payload; `/stats/heatmap`, `/forecast`, `/accuracy`, `/jlpt`, and `/best-worst` remain independently queryable. Query ranges are Zod-validated (422 on bad input).
+
+### Quest titles use the §6.7 phrases; descriptions are the clarifying line
+
+The 12 §6.7 phrases are the quest **titles** verbatim, with a one-line description added for the dashboard card. This is the current shipped copy; open question #3 remains for owner confirmation of the wording, and changing it is a data-only edit to `QUEST_DEFS`.
 
 ### Live preview after every phase (2026-10-22, owner request)
 
@@ -232,5 +247,5 @@ The owner asked to host the site online from Phase 2 onward, watching it grow ph
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.
 2. ~~**Milestone names**~~ — resolved Phase 4: bar labels are **Wakaba 14 · Sakura 30 · Hanami 60 · Momiji 100**; the 7/30/100 achievements keep **Kokoro/Tsuki/Kaze**.
-3. **Quest titles** — §6.7 lists 12 phrases (e.g. "Review 10 cards"); are they the titles themselves, or do you want separate title + description copy?
+3. **Quest titles** — §6.7 lists 12 phrases (e.g. "Review 10 cards"); are they the titles themselves, or do you want separate title + description copy? _Current Phase 5 build uses the phrases as titles with a clarifying description; wording confirmation still open._
 4. **Password reset** — §7.11 shows a "Forgot password?" link but §9 has no reset endpoints. In scope (Phase 8 polish?) or drop the link?

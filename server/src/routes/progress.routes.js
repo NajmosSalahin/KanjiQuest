@@ -4,8 +4,10 @@ import { Types } from 'mongoose';
 import { User } from '../models/User.js';
 import { Kanji } from '../models/Kanji.js';
 import { UserProgress, publicProgress } from '../models/UserProgress.js';
+import { UserQuest } from '../models/UserQuest.js';
 import { scheduleReview } from '../services/srs.js';
 import { awardXP, refundReviewXP } from '../services/xp.js';
+import { trackQuestEvent } from '../services/quests.js';
 import { ok, noContent, fail } from '../utils/envelope.js';
 
 /** §6.5 undo: client window is 4s; the server backstop is wider to absorb
@@ -90,6 +92,16 @@ progressRouter.post('/add', async (req, res, next) => {
       state: 'new',
       dueDate: new Date(),
     });
+    if (progress?._id) {
+      // Creating the rows here means the dashboard's quest card is populated
+      // before the first review. No progress is applied for an add event.
+      try {
+        const user = await User.findById(req.userId).select('timezone preferences').lean();
+        await trackQuestEvent(user, { type: 'add' }, new Date());
+      } catch (err) {
+        console.error('quest tracking failed after add', err);
+      }
+    }
     return ok(res, { progress: publicProgress(progress) }, 201);
   } catch (err) {
     return next(err);
@@ -199,6 +211,7 @@ progressRouter.post('/review', async (req, res, next) => {
       now.getTime()
     );
 
+    const wasNew = !(Array.isArray(progress.history) && progress.history.length > 0);
     const xp = await awardXP(user, 'review', { rating }, now);
 
     progress.state = nextCard.state;
@@ -220,7 +233,76 @@ progressRouter.post('/review', async (req, res, next) => {
     if (progress.history.length > 100) progress.history = progress.history.slice(-100);
     await progress.save();
 
-    return ok(res, { progress: publicProgress(progress), xp });
+    // Quest tracking happens after the SRS write so "clear the queue" can see
+    // the post-review due count. A quest failure must never lose the review.
+    const dueAfter = await UserProgress.countDocuments({
+      userId: req.userId,
+      dueDate: { $lte: now },
+      $or: [{ suspendedUntil: null }, { suspendedUntil: { $lte: now } }],
+    });
+    let questResult = null;
+    try {
+      questResult = await trackQuestEvent(
+        user,
+        {
+          type: 'review',
+          rating,
+          wasNew,
+          dueCleared: dueAfter === 0,
+          dailyXPProgress: xp.dailyXPProgress,
+        },
+        now
+      );
+    } catch (err) {
+      console.error('quest tracking failed after review', err);
+    }
+
+    // Snapshot today's quest rows + the direct XP/coin rewards from this
+    // review so undo can restore quest state without touching achievement
+    // unlocks (which are permanent, §6.5/§11.3).
+    if (questResult) {
+      const entry = progress.history[progress.history.length - 1];
+      entry.questUndo = {
+        date: questResult.quests[0]?.date ?? null,
+        rows: (questResult.beforeQuests ?? []).map((row) => ({
+          _id: String(row._id),
+          progress: row.progress,
+          completed: row.completed,
+          completedAt: row.completedAt,
+          rewardClaimed: row.rewardClaimed,
+          xpAwarded: row.xpAwarded,
+          coinsAwarded: row.coinsAwarded,
+          sweepAwarded: row.sweepAwarded,
+        })),
+        questXP: questResult.questXP ?? 0,
+        questCoins: questResult.questCoins ?? 0,
+        sweepXP: questResult.sweep?.awarded ?? 0,
+      };
+      await progress.save();
+    }
+
+    const responseXp = { ...xp };
+    if (questResult?.profile) {
+      responseXp.totalXP = questResult.profile.totalXP;
+      responseXp.level = questResult.profile.level;
+      responseXp.xpToNextLevel = questResult.profile.xpToNextLevel;
+      responseXp.title = questResult.profile.title;
+      responseXp.coins = questResult.profile.coins;
+      responseXp.leveledUp = questResult.profile.level > xp.previousLevel;
+      const seen = new Set((responseXp.newlyUnlocked ?? []).map((a) => a.id));
+      responseXp.newlyUnlocked = [
+        ...(responseXp.newlyUnlocked ?? []),
+        ...(questResult.profile.newlyUnlocked ?? []).filter((a) => !seen.has(a.id)),
+      ];
+    }
+
+    return ok(res, {
+      progress: publicProgress(progress),
+      xp: responseXp,
+      quests: questResult?.quests ?? null,
+      questCompletions: questResult?.completed ?? [],
+      questSweep: questResult?.sweep ?? null,
+    });
   } catch (err) {
     return next(err);
   }
@@ -244,7 +326,31 @@ reviewRouter.post('/:cardId/undo', async (req, res, next) => {
     }
 
     const user = await User.findById(req.userId).select('timezone preferences').lean();
-    const refund = await refundReviewXP(user, last.xpAwarded ?? 0, last.gami);
+    const questUndo = last.questUndo;
+    if (questUndo?.rows?.length) {
+      await UserQuest.bulkWrite(
+        questUndo.rows.map((row) => ({
+          updateOne: {
+            filter: { _id: row._id, userId: req.userId },
+            update: {
+              $set: {
+                progress: row.progress ?? 0,
+                completed: !!row.completed,
+                completedAt: row.completedAt ?? null,
+                rewardClaimed: !!row.rewardClaimed,
+                xpAwarded: row.xpAwarded ?? 0,
+                coinsAwarded: row.coinsAwarded ?? 0,
+                sweepAwarded: !!row.sweepAwarded,
+              },
+            },
+          },
+        }))
+      );
+    }
+    const refund = await refundReviewXP(user, last.xpAwarded ?? 0, last.gami, {
+      xp: (questUndo?.questXP ?? 0) + (questUndo?.sweepXP ?? 0),
+      coins: questUndo?.questCoins ?? 0,
+    });
 
     progress.state = last.previous.state;
     progress.interval = last.previous.interval;

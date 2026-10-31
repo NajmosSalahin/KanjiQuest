@@ -13,6 +13,7 @@ const Learn = lazy(() => import('./pages/Learn.jsx'));
 const KanjiDetail = lazy(() => import('./pages/KanjiDetail.jsx'));
 const Licenses = lazy(() => import('./pages/Licenses.jsx'));
 const Review = lazy(() => import('./pages/Review.jsx'));
+const Stats = lazy(() => import('./pages/Stats.jsx'));
 
 const isDev = import.meta.env.DEV;
 
@@ -56,6 +57,7 @@ export default function App() {
               <Route path="/learn" element={<Learn />} />
               <Route path="/kanji/:character" element={<KanjiDetail />} />
               <Route path="/licenses" element={<Licenses />} />
+              <Route path="/stats" element={<Stats />} />
             </Route>
             {/* /review is full-screen (§7.2): gated, but outside the shell —
                 global chrome is replaced by the session's own top bar. */}

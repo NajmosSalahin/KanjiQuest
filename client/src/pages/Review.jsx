@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle2, CircleHelp, Volume2 } from 'lucide-react';
 import { RATING, RATING_LABELS } from '@kanjigarden/shared';
 import { api } from '../lib/api.js';
@@ -186,6 +187,7 @@ function ReadingRow({ label, character, readings }) {
 
 export default function Review() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { push } = useToast();
   const mergeGamification = useAuth((s) => s.mergeGamification);
   const furiganaOn = useAuth((s) => s.user?.preferences?.furigana ?? true);
@@ -236,7 +238,15 @@ export default function Review() {
     clearUndo();
     try {
       const res = await api(`/review/${entry.cardId}/undo`, { method: 'POST' });
-      mergeGamification({ totalXP: res.xp.totalXP, currentLevel: res.xp.level });
+      mergeGamification({
+        totalXP: res.xp.totalXP,
+        currentLevel: res.xp.level,
+        xpToNextLevel: res.xp.xpToNextLevel,
+        coins: res.xp.coins,
+      });
+      queryClient.invalidateQueries({ queryKey: ['quests', 'today'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['progress', 'stats'] });
       setSession(entry.snapshot); // compensating restore (§6.5)
       setRevealed(false);
     } catch (err) {
@@ -287,6 +297,23 @@ export default function Review() {
         if (achievement.id === foldedId) continue; // folded into the modal
         push({ message: unlockToastMessage(achievement), tone: 'success' });
       }
+      for (const quest of result.questCompletions ?? []) {
+        push({
+          message: `Quest complete: ${quest.title} — +${quest.xpAwarded || quest.xpReward} XP, ${
+            quest.coinsAwarded || quest.coinReward
+          } coins`,
+          tone: 'success',
+        });
+      }
+      if (result.questSweep) {
+        push({
+          message: `Daily sweep complete — +${result.questSweep.awarded} XP`,
+          tone: 'success',
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['quests', 'today'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.invalidateQueries({ queryKey: ['progress', 'stats'] });
       if (result.xp.leveledUp || result.xp.streakMilestone) {
         setCelebration({
           kind: celebrationKind,
