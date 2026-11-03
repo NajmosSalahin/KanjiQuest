@@ -84,6 +84,35 @@
     fill: var(--ink-muted);
   }
 
+  /* Quiz stroke taps (§7.6): correct taps fill vermillion over 400ms, a wrong
+     tap flashes crimson and shakes the stage by ±4px for 200ms. */
+  .quiz-stroke {
+    stroke: var(--ink-primary);
+    transition: stroke 400ms var(--ease-out);
+  }
+  .quiz-stroke-tapped {
+    stroke: var(--accent-vermillion);
+  }
+  .quiz-stroke-wrong {
+    stroke: var(--danger-crimson);
+    transition: none;
+  }
+  @keyframes quiz-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-4px);
+    }
+    75% {
+      transform: translateX(4px);
+    }
+  }
+  .quiz-shake {
+    animation: quiz-shake 200ms var(--ease-in) 1;
+  }
+
   /* Skip link (§12) — first focusable element on every page */
   .skip-link {
     position: absolute;

@@ -65,7 +65,7 @@ gamificationRouter.get('/profile', async (req, res, next) => {
       level: profile.currentLevel,
       currentStreak: streak, // break-corrected (stored value is lazy until next review)
       title: LEVEL_TITLES[profile.currentLevel - 1],
-      dailyXPProgress: profile.dailyXPProgress,
+      dailyXPProgress: profile.dailyXPDate === today ? profile.dailyXPProgress : 0,
       week,
       nextMilestone: nextMilestone(streak),
       streakFreezes: profile.streakFreezes,

@@ -6,6 +6,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-11-03 — Quiz modes (Phase 6) · tag `phase-6-complete`
+
+- **Quiz hub (§7.5):** `/quiz` shows the five modes as cards with 96px inline SVG icons, live per-mode counts, and the approved **“practice set”** fallback label. Counts come from the new **`GET /quiz/overview`** (D15).
+- **Practice modes (§6.6 / §7.6):** server-generated **meaning**, **reading match** (kana options with On/Kun ruby labels), **stroke order** (KanjiVG paths as hit targets; correct only with zero wrong taps), and **drawing canvas** (normalized 0–300 strokes, server-authoritative geometric scoring, **≥85 / 60–84 / <60**, max 2 checks). Practice sessions are **10 questions**, answered strictly in order, with 2-hour session TTL.
+- **Sprint (§6.6 / §7.6):** 60-second mixed meaning + reading + stroke bank (40 questions), server-owned clock, **+3s per correct / −5s per wrong**, wrong stroke tap ends the question immediately, submit only after the deadline or bank exhaustion, and no XP for an empty sprint.
+- **XP & D13 accounting:** quiz XP is server-awarded (**5/correct + 20 completion at ≥10 answers**; sprint **30 base + 10/correct**). It fills the shared daily bucket (`dailyXPDate`), can trigger the **+30 goal bonus**, counts toward **`earn-100xp`**, and never touches the review streak.
+- **Achievements (D16):** stroke/drawing counters are per question; `Kanpeki 完璧` (100% over ≥10) and `Sokko 即交` (20+ in 60s) are per session; `Itsutsu 五つ` records each completed mode. New profile counters (`quizModesPlayed`, `perfectStrokeQuestions`, `highDrawingQuestions`) keep evaluation aggregation-free.
+- **Client session UX (§7.6):** full-screen 640px flow with progress bar (sprint timer), server-confirmed feedback, 1–4 / Space / `?` shortcuts, summary (accuracy, XP, best sprint streak, goal-met chip), gamification merge + toasts, and the **leave guard** for in-app back, browser back, and tab close.
+- **Data ops:** new `QuizSession` collection + indexes; `scripts/migrate-070.js` backfills `dailyXPDate` from `lastActivityDate` and ensures the quiz indexes.
+- **Tests:** server **187** (+31 — quiz service ×10, drawing scorer ×19, achievement/quest/XP coverage), client **65** (+9 — hub ×2, session ×4, drawing ×3), live smoke **53 checks** (+10 — overview/fallback, full 10-question session, idempotent submit, D13 daily-vs-streak, sprint clock/guard, anonymous quiz guard). Details: [version/0.7.0.md](version/0.7.0.md)
+
 ## [0.6.0] — 2026-10-31 — Daily quests + statistics (Phase 5) · tag `phase-5-complete`
 
 - **Daily quests (§6.7 / D12):** all 12 defs seeded, three deterministic per user + local day, persisted across the day and reset at local midnight. Phase 5 selects the 8 review-completable defs; the 4 quiz defs ship `phase: 6`. Progress tracks review counts, 5-in-a-row, first-learns, daily XP, due-clear, and before-10am/after-8pm; per-quest rewards (20–50 XP + 5–15 coins) and the **+30 daily sweep** claim exactly once. Quest/sweep XP counts toward `totalXP`/level but not the daily goal or streak.

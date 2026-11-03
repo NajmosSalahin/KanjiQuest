@@ -13,6 +13,8 @@ const Learn = lazy(() => import('./pages/Learn.jsx'));
 const KanjiDetail = lazy(() => import('./pages/KanjiDetail.jsx'));
 const Licenses = lazy(() => import('./pages/Licenses.jsx'));
 const Review = lazy(() => import('./pages/Review.jsx'));
+const QuizHub = lazy(() => import('./pages/QuizHub.jsx'));
+const QuizSession = lazy(() => import('./pages/QuizSession.jsx'));
 const Stats = lazy(() => import('./pages/Stats.jsx'));
 
 const isDev = import.meta.env.DEV;
@@ -56,6 +58,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/learn" element={<Learn />} />
               <Route path="/kanji/:character" element={<KanjiDetail />} />
+              <Route path="/quiz" element={<QuizHub />} />
               <Route path="/licenses" element={<Licenses />} />
               <Route path="/stats" element={<Stats />} />
             </Route>
@@ -66,6 +69,16 @@ export default function App() {
               element={
                 <RequireAuth>
                   <Review />
+                </RequireAuth>
+              }
+            />
+            {/* /quiz/play/:mode is full-screen too (§7.6) — the hub (/quiz)
+                stays inside the shell. */}
+            <Route
+              path="/quiz/play/:mode"
+              element={
+                <RequireAuth>
+                  <QuizSession />
                 </RequireAuth>
               }
             />

@@ -73,7 +73,7 @@ describe('quest definitions (§6.7)', () => {
     expect(a).not.toEqual(c);
     for (const id of a) {
       const def = QUEST_DEFS.find((quest) => quest.id === id);
-      expect(def.phase).toBe(5);
+      expect(def.phase).toBeLessThanOrEqual(6);
     }
   });
 });
@@ -98,7 +98,8 @@ describe('GET /api/v1/quests/today', () => {
         xpReward: expect.any(Number),
         coinReward: expect.any(Number),
       });
-      expect(quest.id).not.toMatch(/^quiz-|drawing|stroke/);
+      expect(quest.id).toMatch(/^[a-z0-9-]+$/);
+      expect(QUEST_DEFS.some((def) => def.id === quest.id)).toBe(true);
     }
 
     const second = await request(app).get('/api/v1/quests/today').set('Cookie', jar);

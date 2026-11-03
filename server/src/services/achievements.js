@@ -29,7 +29,7 @@ export const CRITERIA = Object.freeze({
   TIME_OF_DAY: 'TIME_OF_DAY', // {beforeHour | afterHour, count} local-time reviews
   STREAK_REPAIR: 'STREAK_REPAIR', // {threshold} paid repairs
   UNLOCK_COUNT: 'UNLOCK_COUNT', // {threshold} other achievements unlocked
-  // Dormant until their systems land (quiz Phase 6, quests Phase 5, store 7):
+  // Systems that land later (store/freeze Phase 7): skipped until then.
   QUIZ_ACCURACY: 'QUIZ_ACCURACY',
   SPRINT: 'SPRINT',
   STROKE_PERFECT: 'STROKE_PERFECT',
@@ -40,14 +40,7 @@ export const CRITERIA = Object.freeze({
 });
 
 /** Criteria with no producing event yet — evaluator skips, progress is null. */
-export const DORMANT = new Set([
-  CRITERIA.QUIZ_ACCURACY,
-  CRITERIA.SPRINT,
-  CRITERIA.STROKE_PERFECT,
-  CRITERIA.DRAWING_SCORE,
-  CRITERIA.QUIZ_MODES_ALL,
-  CRITERIA.FREEZE_USED,
-]);
+export const DORMANT = new Set([CRITERIA.FREEZE_USED]);
 
 const AGGREGATE_TYPES = new Set([
   CRITERIA.LEARNED,
@@ -594,6 +587,9 @@ export function profileSignals(profile, extra = {}) {
     reviewsAfter23: profile.reviewsAfter23,
     unlockedCount: profile.unlockedAchievementIds.length,
     repairCount: profile.lastStreakRepairAt ? 1 : 0,
+    perfectStrokeQuestions: profile.perfectStrokeQuestions ?? 0,
+    highDrawingQuestions: profile.highDrawingQuestions ?? 0,
+    quizModesPlayed: profile.quizModesPlayed?.length ?? 0,
     ...extra,
   };
 }
@@ -636,10 +632,28 @@ export function criteriaMet(criteria, signals) {
       return (signals.repairCount ?? 0) >= criteria.threshold;
     case CRITERIA.QUEST_SWEEP:
       return (signals.questSweep ?? 0) >= 1;
+    case CRITERIA.QUIZ_ACCURACY:
+      return (
+        !!signals.quizSession &&
+        signals.quizSession.answeredCount >= (criteria.minAnswers ?? 10) &&
+        signals.quizSession.accuracy >= criteria.minPercent
+      );
+    case CRITERIA.SPRINT:
+      return (
+        !!signals.sprint &&
+        signals.sprint.durationSec <= criteria.maxSeconds &&
+        signals.sprint.correct >= criteria.minCorrect
+      );
+    case CRITERIA.STROKE_PERFECT:
+      return (signals.perfectStrokeQuestions ?? 0) >= criteria.count;
+    case CRITERIA.DRAWING_SCORE:
+      return (signals.highDrawingQuestions ?? 0) >= criteria.count;
+    case CRITERIA.QUIZ_MODES_ALL:
+      return (signals.quizModesPlayed ?? 0) >= criteria.count;
     case CRITERIA.UNLOCK_COUNT:
       return signals.unlockedCount >= criteria.threshold;
     default:
-      return false; // dormant quiz/quest/freeze types
+      return false; // dormant freeze type
   }
 }
 
@@ -683,10 +697,23 @@ export function progressFor(criteria, signals) {
       return { current: signals.repairCount ?? 0, target: criteria.threshold };
     case CRITERIA.QUEST_SWEEP:
       return { current: signals.questSweep ?? 0, target: 1 };
+    case CRITERIA.QUIZ_ACCURACY:
+      return {
+        current: signals.quizSession?.accuracy ?? 0,
+        target: criteria.minPercent,
+      };
+    case CRITERIA.SPRINT:
+      return { current: signals.sprint?.correct ?? 0, target: criteria.minCorrect };
+    case CRITERIA.STROKE_PERFECT:
+      return { current: signals.perfectStrokeQuestions ?? 0, target: criteria.count };
+    case CRITERIA.DRAWING_SCORE:
+      return { current: signals.highDrawingQuestions ?? 0, target: criteria.count };
+    case CRITERIA.QUIZ_MODES_ALL:
+      return { current: signals.quizModesPlayed ?? 0, target: criteria.count };
     case CRITERIA.UNLOCK_COUNT:
       return { current: signals.unlockedCount, target: criteria.threshold };
     default:
-      return null; // dormant types show "Locked" without progress (§6.10)
+      return null; // dormant type shows "Locked" without progress (§6.10)
   }
 }
 
@@ -706,13 +733,16 @@ function boosted(profile, amount, now) {
 export async function evaluateAchievements(
   profile,
   user,
-  { now = new Date(), repairCount, questSweep } = {}
+  { now = new Date(), repairCount, questSweep, quizSession, sprint } = {}
 ) {
   const defs = await loadAchievementDefs();
   const unlocked = new Set(profile.unlockedAchievementIds);
   const extra = {
     ...(repairCount !== undefined ? { repairCount } : {}),
     ...(questSweep ? { questSweep } : {}),
+    // Phase 6 per-session signals: accuracy for Kanpeki, sprint performance.
+    ...(quizSession ? { quizSession } : {}),
+    ...(sprint ? { sprint } : {}),
   };
   const signals = profileSignals(profile, extra);
 

@@ -64,8 +64,12 @@ describe('D11 roster (41 achievements)', () => {
     expect(loaded).toHaveLength(41);
   });
 
-  it('activates quests in Phase 5 while quiz/store criteria stay dormant', () => {
-    expect(DORMANT.has(CRITERIA.QUIZ_ACCURACY)).toBe(true);
+  it('activates quests and quiz criteria while store/freeze criteria stay dormant', () => {
+    expect(DORMANT.has(CRITERIA.QUIZ_ACCURACY)).toBe(false);
+    expect(DORMANT.has(CRITERIA.SPRINT)).toBe(false);
+    expect(DORMANT.has(CRITERIA.STROKE_PERFECT)).toBe(false);
+    expect(DORMANT.has(CRITERIA.DRAWING_SCORE)).toBe(false);
+    expect(DORMANT.has(CRITERIA.QUIZ_MODES_ALL)).toBe(false);
     expect(DORMANT.has(CRITERIA.QUEST_SWEEP)).toBe(false);
     expect(DORMANT.has(CRITERIA.FREEZE_USED)).toBe(true);
     expect(DORMANT.has(CRITERIA.STREAK)).toBe(false);
@@ -113,6 +117,63 @@ describe('criteria + progress (cheap signals)', () => {
     ).toBe(false); // no data
   });
 
+  it('evaluates quiz achievement criteria from session + profile signals', () => {
+    const quizSignals = {
+      ...signals,
+      quizSession: { accuracy: 100, answeredCount: 10 },
+      sprint: { durationSec: 60, correct: 20 },
+      perfectStrokeQuestions: 50,
+      highDrawingQuestions: 25,
+      quizModesPlayed: 5,
+    };
+
+    expect(
+      criteriaMet({ type: CRITERIA.QUIZ_ACCURACY, minPercent: 100, minAnswers: 10 }, quizSignals)
+    ).toBe(true);
+    expect(
+      criteriaMet(
+        { type: CRITERIA.QUIZ_ACCURACY, minPercent: 100, minAnswers: 10 },
+        { ...quizSignals, quizSession: { accuracy: 90, answeredCount: 10 } }
+      )
+    ).toBe(false);
+    expect(
+      criteriaMet(
+        { type: CRITERIA.QUIZ_ACCURACY, minPercent: 100, minAnswers: 10 },
+        { ...quizSignals, quizSession: { accuracy: 100, answeredCount: 9 } }
+      )
+    ).toBe(false); // min-answer gate
+    expect(
+      criteriaMet({ type: CRITERIA.SPRINT, maxSeconds: 60, minCorrect: 20 }, quizSignals)
+    ).toBe(true);
+    expect(
+      criteriaMet(
+        { type: CRITERIA.SPRINT, maxSeconds: 60, minCorrect: 20 },
+        { ...quizSignals, sprint: { durationSec: 60, correct: 19 } }
+      )
+    ).toBe(false);
+    expect(criteriaMet({ type: CRITERIA.STROKE_PERFECT, count: 50 }, quizSignals)).toBe(true);
+    expect(
+      criteriaMet(
+        { type: CRITERIA.STROKE_PERFECT, count: 50 },
+        { ...quizSignals, perfectStrokeQuestions: 49 }
+      )
+    ).toBe(false);
+    expect(criteriaMet({ type: CRITERIA.DRAWING_SCORE, count: 25 }, quizSignals)).toBe(true);
+    expect(
+      criteriaMet(
+        { type: CRITERIA.DRAWING_SCORE, count: 25 },
+        { ...quizSignals, highDrawingQuestions: 24 }
+      )
+    ).toBe(false);
+    expect(criteriaMet({ type: CRITERIA.QUIZ_MODES_ALL, count: 5 }, quizSignals)).toBe(true);
+    expect(
+      criteriaMet(
+        { type: CRITERIA.QUIZ_MODES_ALL, count: 5 },
+        { ...quizSignals, quizModesPlayed: 4 }
+      )
+    ).toBe(false);
+  });
+
   it('renders live progress for locked achievements and null for dormant', () => {
     expect(progressFor({ type: CRITERIA.REVIEWS, threshold: 500 }, signals)).toEqual({
       current: 120,
@@ -128,7 +189,8 @@ describe('criteria + progress (cheap signals)', () => {
     });
     expect(
       progressFor({ type: CRITERIA.QUIZ_ACCURACY, minPercent: 100, minAnswers: 10 }, signals)
-    ).toBeNull();
+    ).toEqual({ current: 0, target: 100 });
+    expect(progressFor({ type: CRITERIA.FREEZE_USED, threshold: 1 }, signals)).toBeNull();
   });
 });
 
@@ -140,7 +202,9 @@ describe('aggregateLearningSignals', () => {
       { character: '火', unicode: '706b', meanings: ['fire'], strokeCount: 4, jlptLevel: 5 },
       { character: '月', unicode: '6708', meanings: ['moon'], strokeCount: 4, jlptLevel: 4 },
     ]);
-    const [sui, hi, tsuki] = await Kanji.find().lean();
+    const sui = await Kanji.findOne({ character: '水' }).lean();
+    const hi = await Kanji.findOne({ character: '火' }).lean();
+    const tsuki = await Kanji.findOne({ character: '月' }).lean();
     const now = new Date();
     await UserProgress.create([
       // Learned + mastered N5 #1
@@ -206,6 +270,38 @@ describe('evaluateAchievements', () => {
     expect(ids).not.toContain('kaze'); // 100 days
     expect(ids).not.toContain('hitasura'); // 14 goal days
     expect(profile.coins).toBe(20 + 50 + 10); // Kokoro 20 + Tsuki 50 + Nanakusa 10
+  });
+
+  it('unlocks Kanpeki + Sokkō from session extras passed to the evaluator', async () => {
+    const perfect = await makeProfile();
+    const { newly } = await evaluateAchievements(
+      perfect,
+      {},
+      {
+        quizSession: { accuracy: 100, answeredCount: 10 },
+      }
+    );
+    expect(newly.map((a) => a.id)).toContain('kanpeki');
+
+    const sprinter = await makeProfile();
+    const sprint = await evaluateAchievements(
+      sprinter,
+      {},
+      {
+        sprint: { durationSec: 60, correct: 20 },
+      }
+    );
+    expect(sprint.newly.map((a) => a.id)).toContain('sokko');
+
+    const slow = await makeProfile();
+    const slowSprint = await evaluateAchievements(
+      slow,
+      {},
+      {
+        sprint: { durationSec: 60, correct: 19 },
+      }
+    );
+    expect(slowSprint.newly.map((a) => a.id)).not.toContain('sokko');
   });
 
   it('unlocks level titles and their rewards', async () => {

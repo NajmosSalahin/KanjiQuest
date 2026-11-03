@@ -155,8 +155,8 @@ export const QUEST_DEFS = Object.freeze([
   },
 ]);
 
-/** Phase 5 selection pool. Phase 6 changes this to include quiz quests. */
-export const CURRENT_QUEST_PHASE = 5;
+/** Phase 6 selection pool: review-completable + quiz-completable defs. */
+export const CURRENT_QUEST_PHASE = 6;
 
 export async function seedQuestDefs() {
   const ops = QUEST_DEFS.map((def) => ({
@@ -308,6 +308,10 @@ function questEffect(questId, event, hour) {
   }
   if (event.type === 'quiz') {
     switch (questId) {
+      case 'earn-100xp':
+        return Number.isFinite(event.dailyXPProgress)
+          ? { max: Math.min(100, Math.max(0, event.dailyXPProgress)) }
+          : null;
       case 'quiz-session':
         return event.quizCompleted ? { inc: 1 } : null;
       case 'quiz-perfect':

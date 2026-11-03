@@ -23,6 +23,23 @@ export const QUIZ_XP = Object.freeze({
   DAILY_SWEEP: 30, // all 3 quests
 });
 
+/** Quiz modes (§6.6). */
+export const QUIZ_MODES = Object.freeze(['meaning', 'reading', 'stroke', 'drawing', 'sprint']);
+
+/** Practice-session length; §11.1's completion bonus needs ≥10 answers. */
+export const QUIZ_SESSION_LENGTH = 10;
+
+/** Sprint duration before bonuses (§6.6/§7.6). */
+export const QUIZ_SPRINT_SECONDS = 60;
+
+/** Drawing-canvas score bands (§7.6) and attempt cap. */
+export const QUIZ_DRAWING = Object.freeze({
+  CORRECT: 85,
+  CLOSE: 60,
+  MAX_ATTEMPTS: 2,
+  CANVAS_SIZE: 300,
+});
+
 /** Levels (§11.2): 20 levels, xpToNextLevel(N) = floor(100 * N^1.5). */
 export const MAX_LEVEL = 20;
 export const LEVEL_TITLES = Object.freeze([

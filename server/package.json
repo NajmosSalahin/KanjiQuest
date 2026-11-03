@@ -1,6 +1,6 @@
 {
   "name": "@kanjigarden/server",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
     "seed-achievements": "node src/scripts/seed-achievements.js",
     "migrate-050": "node src/scripts/migrate-050.js",
     "migrate-060": "node src/scripts/migrate-060.js",
+    "migrate-070": "node src/scripts/migrate-070.js",
     "seed-quests": "node src/scripts/seed-quests.js"
   },
   "dependencies": {

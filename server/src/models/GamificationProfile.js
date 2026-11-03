@@ -15,6 +15,8 @@ const gamificationProfileSchema = new Schema({
   coins: { type: Number, default: 0 },
   dailyGoalXP: { type: Number, default: DEFAULT_DAILY_GOAL_XP },
   dailyXPProgress: { type: Number, default: 0 },
+  /** Local day the daily XP bucket belongs to (quiz-only days need this). */
+  dailyXPDate: { type: String, default: null },
   lastReviewDate: { type: String, default: null }, // YYYY-MM-DD, first-review-of-day bookkeeping
   unlockedAchievementIds: { type: [String], default: [] },
   /** id -> unlock Date (D11 supplement; unlockedAchievementIds stays §8-canonical). */
@@ -34,6 +36,11 @@ const gamificationProfileSchema = new Schema({
   dailyCountersDate: { type: String, default: null }, // day the daily counters belong to
   dailyReviewsCount: { type: Number, default: 0 },
   dailyAgainToday: { type: Boolean, default: false }, // Hyakuten (百点) gate
+
+  // — Phase 6 additive (D13/D16) — quiz achievements without aggregation —
+  quizModesPlayed: { type: [String], default: [] }, // Itsutsu (五つ): 5 modes
+  perfectStrokeQuestions: { type: Number, default: 0 }, // Hitsuwaza (筆技)
+  highDrawingQuestions: { type: Number, default: 0 }, // Kaite Miro (書いてみろ)
 });
 
 export const GamificationProfile = model('GamificationProfile', gamificationProfileSchema);

@@ -1,5 +1,5 @@
 /**
- * Live smoke test — run after every phase's deploy (43 checks).
+ * Live smoke test - run after every phase's deploy (53 checks).
  *
  *   node deploy/smoke.mjs                       # defaults to https://kanjiquest.vercel.app
  *   node deploy/smoke.mjs https://my-app.vercel.app
@@ -13,8 +13,10 @@
  * §11.6 goal default, 41 achievements + first-review unlock, D10 repair
  * negative path, anonymous guard), Phase 5 daily quests (three persisted
  * quests + sweep reward) and statistics (365 heatmap, next-30 forecast,
- * 30-day accuracy, N5–N3 JLPT, best/worst, query validation), logout, SPA
- * fallback, security headers.
+ * 30-day accuracy, N5-N3 JLPT, best/worst, query validation), Phase 6 quiz
+ * modes (overview/fallback, a full 10-question meaning session, idempotent
+ * submit, D13 daily-XP accounting, sprint clock + active-submit guard),
+ * logout, SPA fallback, security headers.
  *
  * Registers a throwaway `smoke+<epoch>@example.com` user; when a root `.env`
  * with MONGODB_URI is found (local runs), it deletes that user + sessions +
@@ -83,7 +85,11 @@ console.log(`smoke target: ${BASE}\n`);
 // 1. health through the proxy
 {
   const r = await call('/api/v1/health');
-  check('health via vercel proxy', r.status === 200 && r.json?.success === true, `status=${r.status}`);
+  check(
+    'health via vercel proxy',
+    r.status === 200 && r.json?.success === true,
+    `status=${r.status}`
+  );
 }
 
 // 2. register + cookie attributes
@@ -95,7 +101,11 @@ let registerSetCookies = [];
   });
   registerSetCookies = r.setCookies ?? [];
   const sc = registerSetCookies.join(' | ');
-  check('register -> 201 + session', r.status === 201 && r.json?.success === true, `status=${r.status}`);
+  check(
+    'register -> 201 + session',
+    r.status === 201 && r.json?.success === true,
+    `status=${r.status}`
+  );
   check(
     'cookies: HttpOnly + Secure + SameSite=Strict',
     /httponly/i.test(sc) && /secure/i.test(sc) && /samesite=strict/i.test(sc)
@@ -105,13 +115,21 @@ let registerSetCookies = [];
 // 3. authenticated /users/me
 {
   const r = await call('/api/v1/users/me');
-  check('users/me with cookie', r.status === 200 && r.json?.data?.user?.email === EMAIL, `status=${r.status}`);
+  check(
+    'users/me with cookie',
+    r.status === 200 && r.json?.data?.user?.email === EMAIL,
+    `status=${r.status}`
+  );
 }
 
 // 4. kanji list
 {
   const r = await call('/api/v1/kanji?limit=3&status=all');
-  check('kanji list limit=3', r.status === 200 && r.json?.data?.items?.length === 3, `total=${r.json?.data?.total}`);
+  check(
+    'kanji list limit=3',
+    r.status === 200 && r.json?.data?.items?.length === 3,
+    `total=${r.json?.data?.total}`
+  );
 }
 
 // 5. D6 sort=strokes — integer counts, non-decreasing (bug #3 regression: NaN used to sort first as nulls)
@@ -141,19 +159,31 @@ let registerSetCookies = [];
 {
   const r = await call(`/api/v1/kanji/${encodeURIComponent('水')}`);
   const d = r.json?.data;
-  check('kanji detail (water)', r.status === 200 && (d?.kanji?.character ?? d?.character) === '水', `status=${r.status}`);
+  check(
+    'kanji detail (water)',
+    r.status === 200 && (d?.kanji?.character ?? d?.character) === '水',
+    `status=${r.status}`
+  );
 }
 
 // 8. detail 404 envelope
 {
   const r = await call('/api/v1/kanji/A');
-  check('kanji detail 404 envelope', r.status === 404 && r.json?.error?.code === 'KANJI_NOT_FOUND', `code=${r.json?.error?.code}`);
+  check(
+    'kanji detail 404 envelope',
+    r.status === 404 && r.json?.error?.code === 'KANJI_NOT_FOUND',
+    `code=${r.json?.error?.code}`
+  );
 }
 
 // 9. radicals
 {
   const r = await call('/api/v1/radicals');
-  check('radicals list', r.status === 200 && (r.json?.data?.radicals?.length ?? 0) > 0, `count=${r.json?.data?.radicals?.length}`);
+  check(
+    'radicals list',
+    r.status === 200 && (r.json?.data?.radicals?.length ?? 0) > 0,
+    `count=${r.json?.data?.radicals?.length}`
+  );
 }
 
 // 10. licenses
@@ -164,20 +194,38 @@ let registerSetCookies = [];
 
 // 11. bad login — uniform 401
 {
-  const r = await call('/api/v1/auth/login', { method: 'POST', body: { email: EMAIL, password: 'wrong-password-x' } });
-  check('bad login -> 401 INVALID_CREDENTIALS', r.status === 401 && r.json?.error?.code === 'INVALID_CREDENTIALS', `status=${r.status}`);
+  const r = await call('/api/v1/auth/login', {
+    method: 'POST',
+    body: { email: EMAIL, password: 'wrong-password-x' },
+  });
+  check(
+    'bad login -> 401 INVALID_CREDENTIALS',
+    r.status === 401 && r.json?.error?.code === 'INVALID_CREDENTIALS',
+    `status=${r.status}`
+  );
 }
 
 // 12. missing CSRF header — rejected
 {
-  const r = await call('/api/v1/auth/login', { method: 'POST', body: { email: EMAIL, password: PASSWORD }, withCsrf: false });
-  check('missing X-Requested-With -> rejected', r.status === 403 && r.json?.error?.code === 'CSRF_HEADER_MISSING', `status=${r.status}`);
+  const r = await call('/api/v1/auth/login', {
+    method: 'POST',
+    body: { email: EMAIL, password: PASSWORD },
+    withCsrf: false,
+  });
+  check(
+    'missing X-Requested-With -> rejected',
+    r.status === 403 && r.json?.error?.code === 'CSRF_HEADER_MISSING',
+    `status=${r.status}`
+  );
 }
 
 // 13. correct login
 {
   cookies.clear();
-  const r = await call('/api/v1/auth/login', { method: 'POST', body: { email: EMAIL, password: PASSWORD } });
+  const r = await call('/api/v1/auth/login', {
+    method: 'POST',
+    body: { email: EMAIL, password: PASSWORD },
+  });
   check('login -> 200 + cookies', r.status === 200 && cookies.size > 0, `status=${r.status}`);
 }
 
@@ -205,7 +253,9 @@ let registerSetCookies = [];
   const items = r.json?.data?.items ?? [];
   check(
     'progress/due -> 3 cards with content',
-    r.status === 200 && items.length === 3 && items.every((i) => i.character && i.id && Array.isArray(i.meanings)),
+    r.status === 200 &&
+      items.length === 3 &&
+      items.every((i) => i.character && i.id && Array.isArray(i.meanings)),
     `items=${items.length} total=${r.json?.data?.total}`
   );
 }
@@ -215,7 +265,10 @@ let registerSetCookies = [];
   const due = await call('/api/v1/progress/due');
   const card = due.json?.data?.items?.[0];
 
-  const r = await call('/api/v1/progress/review', { method: 'POST', body: { cardId: card.id, rating: 2 } });
+  const r = await call('/api/v1/progress/review', {
+    method: 'POST',
+    body: { cardId: card.id, rating: 2 },
+  });
   const p = r.json?.data?.progress;
   const xp = r.json?.data?.xp;
   const questRewards =
@@ -223,7 +276,11 @@ let registerSetCookies = [];
     (r.json?.data?.questSweep?.awarded ?? 0);
   check(
     'progress/review Good -> SRS + first-review XP (30) + streak 1',
-    r.status === 200 && p?.state === 'review' && p?.interval === 1 && xp?.awarded === 30 && xp?.currentStreak === 1,
+    r.status === 200 &&
+      p?.state === 'review' &&
+      p?.interval === 1 &&
+      xp?.awarded === 30 &&
+      xp?.currentStreak === 1,
     `state=${p?.state} interval=${p?.interval} xp=${xp?.awarded}`
   );
   check(
@@ -251,7 +308,10 @@ let registerSetCookies = [];
     `status=${u.status} state=${u.json?.data?.progress?.state} totalXP=${u.json?.data?.xp?.totalXP}`
   );
 
-  const again = await call('/api/v1/progress/review', { method: 'POST', body: { cardId: card.id, rating: 2 } });
+  const again = await call('/api/v1/progress/review', {
+    method: 'POST',
+    body: { cardId: card.id, rating: 2 },
+  });
   const againRewards =
     (again.json?.data?.questCompletions ?? []).reduce((sum, q) => sum + (q.xpAwarded ?? 0), 0) +
     (again.json?.data?.questSweep?.awarded ?? 0);
@@ -330,7 +390,10 @@ let registerSetCookies = [];
 
   const firstDay = d?.forecast?.[0]?.date;
   const lastDay = d?.forecast?.at(-1)?.date;
-  const forwardDays = firstDay && lastDay ? Math.round((Date.parse(lastDay) - Date.parse(firstDay)) / 86_400_000) : -1;
+  const forwardDays =
+    firstDay && lastDay
+      ? Math.round((Date.parse(lastDay) - Date.parse(firstDay)) / 86_400_000)
+      : -1;
   check(
     'stats/forecast -> next 30 days (overdue folded into today)',
     firstDay === d?.heatmap?.at(-1)?.date && forwardDays === 29,
@@ -372,12 +435,18 @@ let registerSetCookies = [];
   const d = r.json?.data;
   check(
     'gamification/profile -> goal XP 50 (§11.6) + level + coins',
-    r.status === 200 && d?.dailyGoalXP === 50 && typeof d?.level === 'number' && typeof d?.coins === 'number',
+    r.status === 200 &&
+      d?.dailyGoalXP === 50 &&
+      typeof d?.level === 'number' &&
+      typeof d?.coins === 'number',
     `status=${r.status} goal=${d?.dailyGoalXP} level=${d?.level}`
   );
   check(
     'gamification/profile -> rolling 7-day grid + 41 achievements + streak',
-    Array.isArray(d?.week) && d.week.length === 7 && d?.achievements?.total === 41 && (d?.currentStreak ?? 0) >= 1,
+    Array.isArray(d?.week) &&
+      d.week.length === 7 &&
+      d?.achievements?.total === 41 &&
+      (d?.currentStreak ?? 0) >= 1,
     `week=${d?.week?.length} total=${d?.achievements?.total} streak=${d?.currentStreak}`
   );
 }
@@ -404,11 +473,147 @@ let registerSetCookies = [];
   );
 }
 
+// 22e. Phase 6 (§6.6/§7.5): quiz hub counts + practice-set fallback (D15)
+{
+  const r = await call('/api/v1/quiz/overview');
+  const d = r.json?.data;
+  const modes = d?.modes ?? {};
+  const five = ['meaning', 'reading', 'stroke', 'drawing', 'sprint'].every(
+    (mode) => Number.isFinite(modes[mode]?.available) && modes[mode].available >= 1
+  );
+  check(
+    'quiz/overview -> 5 modes + practice-set fallback label',
+    r.status === 200 &&
+      five &&
+      d?.label === 'practice set' &&
+      d?.fallback === true &&
+      modes.meaning?.available === 10 &&
+      modes.sprint?.available === 40,
+    `label=${d?.label} meaning=${modes.meaning?.available} sprint=${modes.sprint?.available}`
+  );
+}
+
+// 22f. Phase 6 (§6.6/§11.1): full meaning session → XP → idempotent replay (D13)
+{
+  const before = await call('/api/v1/gamification/profile');
+  const start = await call('/api/v1/quiz/start', { method: 'POST', body: { mode: 'meaning' } });
+  const s = start.json?.data;
+  const questions = s?.questions ?? [];
+  const publicOnly = questions.every((q) => !('answer' in q) && !('template' in q));
+  check(
+    'quiz/start meaning -> 10 public questions, no answer keys',
+    start.status === 201 && s?.session?.mode === 'meaning' && questions.length === 10 && publicOnly,
+    `status=${start.status} questions=${questions.length}`
+  );
+
+  let last = null;
+  for (const question of questions) {
+    last = await call(`/api/v1/quiz/${s.session.id}/answer`, {
+      method: 'POST',
+      body: { optionId: question.options[0].id },
+    });
+    if (last.status !== 200) break;
+  }
+  check(
+    'quiz answers -> all 10 accepted in order, nextQuestion null',
+    last?.status === 200 &&
+      last.json?.data?.session?.answeredCount === 10 &&
+      last.json?.data?.nextQuestion === null,
+    `status=${last?.status} answered=${last?.json?.data?.session?.answeredCount}`
+  );
+
+  const submit = await call(`/api/v1/quiz/${s.session.id}/submit`, { method: 'POST' });
+  const summary = submit.json?.data;
+  check(
+    'quiz submit -> completed summary + ≥20 completion XP',
+    submit.status === 200 &&
+      summary?.session?.status === 'completed' &&
+      summary?.answeredCount === 10 &&
+      summary?.xpEarned >= 20 &&
+      Array.isArray(summary?.results) &&
+      summary.results.length === 10,
+    `status=${submit.status} xp=${summary?.xpEarned} answered=${summary?.answeredCount}`
+  );
+
+  const replay = await call(`/api/v1/quiz/${s.session.id}/submit`, { method: 'POST' });
+  check(
+    'quiz submit replay -> same stored summary (no double XP)',
+    replay.status === 200 &&
+      replay.json?.data?.xpEarned === summary?.xpEarned &&
+      replay.json?.data?.xp?.totalXP === summary?.xp?.totalXP,
+    `status=${replay.status} totalXP=${replay.json?.data?.xp?.totalXP}`
+  );
+
+  const after = await call('/api/v1/gamification/profile');
+  const b = before.json?.data;
+  const a = after.json?.data;
+  check(
+    'quiz XP -> daily ring grows, review streak unchanged (D13)',
+    after.status === 200 &&
+      (a?.dailyXPProgress ?? 0) - (b?.dailyXPProgress ?? 0) >= 20 &&
+      a?.currentStreak === b?.currentStreak,
+    `daily ${b?.dailyXPProgress} -> ${a?.dailyXPProgress} streak ${b?.currentStreak} -> ${a?.currentStreak}`
+  );
+}
+
+// 22g. Phase 6 (§6.6/§7.6): sprint clock + active-submit guard
+{
+  const start = await call('/api/v1/quiz/start', { method: 'POST', body: { mode: 'sprint' } });
+  const s = start.json?.data;
+  const q = s?.question;
+  check(
+    'quiz/start sprint -> 60s server clock, no preloaded bank',
+    start.status === 201 &&
+      s?.session?.mode === 'sprint' &&
+      s.session.totalQuestions === null &&
+      s.session.remainingMs >= 55_000 &&
+      s.session.remainingMs <= 60_000 &&
+      q &&
+      !Array.isArray(s.questions),
+    `status=${start.status} remaining=${s?.session?.remainingMs}`
+  );
+
+  const active = await call(`/api/v1/quiz/${s.session.id}/submit`, { method: 'POST' });
+  check(
+    'sprint submit before deadline -> 409 SPRINT_ACTIVE',
+    active.status === 409 && active.json?.error?.code === 'SPRINT_ACTIVE',
+    `status=${active.status} code=${active.json?.error?.code}`
+  );
+
+  let answered = null;
+  if (q.mode === 'stroke') {
+    for (const stroke of q.strokes) {
+      answered = await call(`/api/v1/quiz/${s.session.id}/answer`, {
+        method: 'POST',
+        body: { strokeId: stroke.id },
+      });
+      if (answered.json?.data?.complete) break;
+    }
+  } else {
+    answered = await call(`/api/v1/quiz/${s.session.id}/answer`, {
+      method: 'POST',
+      body: { optionId: q.options[0].id },
+    });
+  }
+  const d = answered?.json?.data;
+  check(
+    'sprint answer -> ±clock delta + remaining time',
+    answered?.status === 200 &&
+      (d?.timeDeltaMs === 3000 || d?.timeDeltaMs === -5000) &&
+      (d?.session?.remainingMs ?? 0) > 0,
+    `status=${answered?.status} delta=${d?.timeDeltaMs} remaining=${d?.session?.remainingMs}`
+  );
+}
+
 // 23. logout invalidates
 {
   const r = await call('/api/v1/auth/logout', { method: 'POST' });
   const me = await call('/api/v1/users/me');
-  check('logout -> 204 and me 401', r.status === 204 && me.status === 401, `logout=${r.status} me=${me.status}`);
+  check(
+    'logout -> 204 and me 401',
+    r.status === 204 && me.status === 401,
+    `logout=${r.status} me=${me.status}`
+  );
 }
 
 // 24. anonymous invariants (Phase 3): myProgress null, status=learning empty
@@ -431,10 +636,11 @@ let registerSetCookies = [];
   check('anonymous /gamification/profile -> 401', gp.status === 401, `status=${gp.status}`);
   const quests = await call('/api/v1/quests/today');
   const stats = await call('/api/v1/stats');
+  const quizOverview = await call('/api/v1/quiz/overview');
   check(
-    'anonymous /quests/today + /stats -> 401',
-    quests.status === 401 && stats.status === 401,
-    `quests=${quests.status} stats=${stats.status}`
+    'anonymous /quests/today + /stats + /quiz/overview -> 401',
+    quests.status === 401 && stats.status === 401 && quizOverview.status === 401,
+    `quests=${quests.status} stats=${stats.status} quiz=${quizOverview.status}`
   );
 }
 
@@ -442,19 +648,30 @@ let registerSetCookies = [];
 {
   const res = await fetch(BASE + '/learn');
   const html = await res.text();
-  check('SPA fallback /learn serves app', res.status === 200 && /<!doctype html>/i.test(html) && html.includes('<div id="root"'), `status=${res.status}`);
+  check(
+    'SPA fallback /learn serves app',
+    res.status === 200 && /<!doctype html>/i.test(html) && html.includes('<div id="root"'),
+    `status=${res.status}`
+  );
 }
 
 // 26. security headers on static responses
 {
   const res = await fetch(BASE + '/');
-  check('security headers on client', !!(res.headers.get('content-security-policy') || res.headers.get('x-content-type-options')));
+  check(
+    'security headers on client',
+    !!(res.headers.get('content-security-policy') || res.headers.get('x-content-type-options'))
+  );
 }
 
 // 27. proxy pass-through headers survive (CORS is same-origin; verify no ACAO needed + API reachable via /health alias)
 {
   const r = await call('/health');
-  check('legacy /health alias via proxy', r.status === 200 && r.json?.success === true, `status=${r.status}`);
+  check(
+    'legacy /health alias via proxy',
+    r.status === 200 && r.json?.success === true,
+    `status=${r.status}`
+  );
 }
 
 const failed = results.filter((r) => !r.pass);
@@ -474,12 +691,16 @@ try {
       const mongoose = require('mongoose');
       await mongoose.connect(uri, { dbName: 'kanjiquest', serverSelectionTimeoutMS: 15000 });
       const db = mongoose.connection.db;
-      const users = await db.collection('users').find({ email: EMAIL }, { projection: { _id: 1 } }).toArray();
+      const users = await db
+        .collection('users')
+        .find({ email: EMAIL }, { projection: { _id: 1 } })
+        .toArray();
       if (users.length > 0) {
         const ids = users.map((u) => u._id);
         await db.collection('sessions').deleteMany({ userId: { $in: ids } });
         await db.collection('gamificationprofiles').deleteMany({ userId: { $in: ids } });
         await db.collection('userprogresses').deleteMany({ userId: { $in: ids } });
+        await db.collection('quizsessions').deleteMany({ userId: { $in: ids } });
         await db.collection('users').deleteMany({ _id: { $in: ids } });
         console.log(`cleanup: removed smoke user ${EMAIL}`);
       }

@@ -30,11 +30,6 @@ async function signUp(email = 'rina@example.com') {
   return { jar: cookieHeader(res), email };
 }
 
-async function profileOf(email = 'rina@example.com') {
-  const user = await User.findOne({ email });
-  return GamificationProfile.findOne({ userId: user._id });
-}
-
 beforeAll(async () => {
   mongod = await startTestDb();
 });
@@ -133,7 +128,7 @@ describe('GET /api/v1/gamification/achievements', () => {
     expect(hajimemashite.progress).toEqual({ current: 0, target: 1 });
 
     const kanpeki = res.body.data.items.find((a) => a.id === 'kanpeki');
-    expect(kanpeki.progress).toBeNull(); // dormant quiz type
+    expect(kanpeki.progress).toEqual({ current: 0, target: 100 }); // quiz accuracy
 
     const kokoro = res.body.data.items.find((a) => a.id === 'kokoro');
     expect(kokoro).toMatchObject({ name: 'Kokoro', nameJa: '心', category: 'streak' });

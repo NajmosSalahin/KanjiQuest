@@ -243,6 +243,34 @@ The owner asked to host the site online from Phase 2 onward, watching it grow ph
 
 **Known free-tier limits (acceptable for previews):** Render free services spin down after ~15 min idle (first request after idle takes ~30–50 s); the ephemeral disk wipes on redeploys (irrelevant until avatar uploads in a later phase); Atlas Network Access must allow Render egress (`0.0.0.0/0` — the owner was advised to rotate the Atlas password given the open allowlist).
 
+## Implementation notes (Phase 6 — Quiz modes)
+
+### D13: quiz XP is daily-goal XP, not streak XP (owner-approved)
+
+Quiz sessions award server-side XP only (`awardXP(event: 'quiz')`): **5 XP per correct answer + 20 completion XP once ≥10 answers are submitted**, or **30 base + 10 per correct** for a sprint. The amount fills the same daily bucket as reviews (`dailyXPProgress`, keyed by the new `dailyXPDate`) and can trigger the **+30 daily-goal bonus** once; it deliberately does **not** call the review streak engine, update `lastActivityDate`/`lastReviewDate`, or increment review counters. The `earn-100xp` quest reads the same daily bucket, so quiz XP counts toward it. Because a quiz-only day must still reset the dashboard ring at local midnight, `dailyXPDate` replaces the old `lastActivityDate` proxy for the bucket; `migrate-070` backfills it from `lastActivityDate` for profiles created before v0.7.0. Achievement XP continues to count only toward `totalXP`/level, never the goal or streak.
+
+### D14: drawing scoring is server-authoritative geometry (owner-approved; documented per §7.6)
+
+The client normalizes pointer strokes to the **0–300 canvas box** and posts arrays of `{x, y}` points (Zod caps at 60 strokes × 500 points); all scoring happens on the server against the kanji's KanjiVG template. The scorer flattens template paths (lines/cubics/quadratics/arcs) to ~1.6-viewBox-unit samples, normalizes both sides to 0–1, and uses a **0.075 tolerance** (~22px on the 300px canvas):
+
+- **precision** = share of the learner's ink within tolerance of the template;
+- **recall** = share of the template covered by the learner's ink;
+- **stroke factor** = `1 − |drawn − template| / template`, clamped to **0.55–1.0** so a single scribble cannot score as a full kanji;
+- **score** = `round(100 × (0.5 × precision + 0.5 × recall) × stroke factor)`.
+
+Bands: **≥85 correct**; **60–84 close → retry**; **<60 not quite → template overlay**. Each drawing allows **two checks maximum**. A correct first check or the second check completes the question; any final miss keeps the overlay visible for review. `overlay` is only returned on a miss.
+
+### D15: practice pool, N5 fallback, and `GET /quiz/overview` (owner-approved)
+
+The practice pool is the user's tracked kanji in `learning`, `review`, or `relearning`, filtered to ones that can produce the requested mode (meaning, reading, stroke, or drawing). If that matching pool has fewer than the target (**10** practice questions, **40** sprint-bank questions), it is filled from **N5 kanji with stroke order** (shuffled, excluding characters already in the pool). Sprint uses the same fallback but mixes meaning + reading + stroke only. The hub counts come from the approved addition **`GET /quiz/overview`**: per-mode `available` + `fallback`, and a top-level label that reads **“practice set”** when any of the four practice modes is using fallback, otherwise **“review queue”**. Sprint alone never flips the label.
+
+### D16: quiz session rules + achievement granularity (owner-approved)
+
+- **Practice sessions:** 10 questions, answered strictly in server order; start returns the full public question list, answer keys/templates stay server-side. Sessions expire after **2 hours**. Reading options are kana in `<ruby>` with an On/Kun `<rt>` label. Stroke order is correct only with **zero wrong taps**; a wrong tap in a practice question shakes but does not end it.
+- **Sprint:** mixed meaning/reading/stroke from a **40-question bank**, no drawing. The server owns the clock (`remainingMs` + `lastTickAt`; the client only renders the countdown). Correct answers add **+3s**, wrong answers subtract **5s**; a wrong stroke tap ends that question immediately. Submitting before the deadline (and before bank exhaustion) returns `409 SPRINT_ACTIVE`; a sprint with zero answers returns `422 SPRINT_EMPTY` and earns no XP. Only the sprint payout avoids the 10-answer completion floor (base XP requires ≥1 answer).
+- **Achievements:** stroke (`Hitsuwaza 筆技`) and drawing (`Kaite Miro 書いてみろ`) counters are **per question** (perfect stroke = zero wrong taps; drawing ≥85); `Kanpeki 完璧` (100% over ≥10 answers) and `Sokko 即交` (20+ correct in 60s) evaluate **per session**. `Itsutsu 五つ` records each completed mode once. Quiz-mode counters live on `GamificationProfile` (`quizModesPlayed`, `perfectStrokeQuestions`, `highDrawingQuestions`) so evaluation needs no aggregation.
+- **Leave guard (§7.6):** an active session confirms before the in-app back button, browser back, or tab close; “Stay” keeps the session, “Leave quiz” abandons it without XP.
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.

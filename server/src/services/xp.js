@@ -13,6 +13,7 @@
  */
 import {
   QUIZ_XP,
+  QUIZ_SPRINT_SECONDS,
   REVIEW_XP,
   XP_BOOST_MULTIPLIER,
   xpToNextLevel,
@@ -53,8 +54,13 @@ function applyBoost(profile, amount, now) {
 }
 
 /**
- * Award XP for one gamification event. Currently 'review' (Phase 3 flow);
- * later events (quiz correct/session/sprint, quest, sweep) join here.
+ * Award XP for one gamification event: 'review' (Phase 3 flow) or 'quiz'
+ * (Phase 6, D13). Quest/sweep rewards are settled by quests.js itself.
+ *
+ * Quiz XP counts toward the daily goal + goal bonus but NOT the streak
+ * (streak stays review-only, §11.4/D13). Both events share the daily bucket,
+ * keyed by `dailyXPDate`, so the dashboard ring resets at local midnight even
+ * on a quiz-only day.
  *
  * Returns the response payload plus:
  *  - `newlyUnlocked[]` — achievements unlocked by this event (toast feed)
@@ -62,10 +68,10 @@ function applyBoost(profile, amount, now) {
  *  - `gami` — pre-award counter snapshot for the §6.5 undo's exact restore
  */
 export async function awardXP(user, event, payload, now = new Date()) {
-  if (event !== 'review') {
+  if (event !== 'review' && event !== 'quiz') {
     throw new Error(`awardXP: unsupported event "${event}" (ships in a later phase)`);
   }
-  const { rating } = payload;
+  const isQuiz = event === 'quiz';
   const profile = await ensureGamificationProfile(
     user._id,
     user.preferences?.dailyGoalXP ?? DEFAULT_DAILY_GOAL_XP
@@ -90,41 +96,69 @@ export async function awardXP(user, event, payload, now = new Date()) {
   const previousLevel = profile.currentLevel;
   const previousStreak = profile.currentStreak;
 
-  const newDay = profile.lastActivityDate !== today;
-  const dailyXP = newDay ? 0 : profile.dailyXPProgress;
-  if (profile.dailyCountersDate !== today) {
-    profile.dailyReviewsCount = 0;
-    profile.dailyAgainToday = false;
-    profile.dailyCountersDate = today;
-  }
+  // The daily XP bucket is event-agnostic; review and quiz stack into the
+  // same ring. `dailyXPDate` replaces the old lastActivityDate proxy.
+  const dailyXP = profile.dailyXPDate === today ? profile.dailyXPProgress : 0;
+  const goalAlreadyMet = profile.dailyXPDate === today && dailyXP >= profile.dailyGoalXP;
 
-  // §11.1: per-rating XP + first-review-of-day + daily-goal crossing.
-  let awarded = REVIEW_XP[rating];
+  let awarded = 0;
   const bonuses = [];
-  if (profile.lastReviewDate !== today) {
-    awarded += QUIZ_XP.FIRST_REVIEW_OF_DAY;
-    bonuses.push('firstReview');
-  }
-  const goalAlreadyMet = !newDay && profile.dailyXPProgress >= profile.dailyGoalXP;
-  if (!goalAlreadyMet && dailyXP + awarded >= profile.dailyGoalXP) {
-    awarded += QUIZ_XP.DAILY_GOAL_MET;
-    bonuses.push('goalMet');
+
+  if (!isQuiz) {
+    const previousDailyBucket = profile.dailyXPDate;
+    if (previousDailyBucket !== today && profile.dailyCountersDate !== today) {
+      profile.dailyReviewsCount = 0;
+      profile.dailyAgainToday = false;
+      profile.dailyCountersDate = today;
+    }
+
+    // §11.1: per-rating XP + first-review-of-day + daily-goal crossing.
+    awarded = REVIEW_XP[payload.rating];
+    if (profile.lastReviewDate !== today) {
+      awarded += QUIZ_XP.FIRST_REVIEW_OF_DAY;
+      bonuses.push('firstReview');
+    }
+    if (!goalAlreadyMet && dailyXP + awarded >= profile.dailyGoalXP) {
+      awarded += QUIZ_XP.DAILY_GOAL_MET;
+      bonuses.push('goalMet');
+    }
+
+    // §11.4 streak (timezone-correct, freeze-aware) + Phase 4 counters.
+    applyStreak(profile, today);
+    profile.lastActivityDate = today;
+    profile.lastReviewDate = today;
+    profile.totalReviews += 1;
+    profile.dailyReviewsCount += 1;
+    profile.dailyAgainToday = profile.dailyAgainToday || payload.rating === RATING.AGAIN;
+    profile.currentPerfectRun = payload.rating === RATING.AGAIN ? 0 : profile.currentPerfectRun + 1;
+    const hour = localHour(now, tz);
+    if (hour < 8) profile.reviewsBefore8 += 1;
+    if (hour >= 23) profile.reviewsAfter23 += 1;
+  } else {
+    // Quiz: correct answers + completion (or sprint base) cross the goal just
+    // like a review would, but do not touch the review streak.
+    awarded = Math.max(0, payload.baseXP ?? 0);
+    if (!goalAlreadyMet && dailyXP + awarded >= profile.dailyGoalXP) {
+      awarded += QUIZ_XP.DAILY_GOAL_MET;
+      bonuses.push('goalMet');
+    }
+
+    if (payload.sessionCompleted) {
+      if (!Array.isArray(profile.quizModesPlayed)) profile.quizModesPlayed = [];
+      if (!profile.quizModesPlayed.includes(payload.sessionType)) {
+        profile.quizModesPlayed.push(payload.sessionType);
+      }
+    }
+    profile.perfectStrokeQuestions =
+      (profile.perfectStrokeQuestions ?? 0) + Math.max(0, payload.perfectStrokeQuestions ?? 0);
+    profile.highDrawingQuestions =
+      (profile.highDrawingQuestions ?? 0) + Math.max(0, payload.highDrawingQuestions ?? 0);
   }
 
-  const boostedReviewXP = applyBoost(profile, awarded, now);
+  const boostedAward = applyBoost(profile, awarded, now);
 
-  // §11.4 streak (timezone-correct, freeze-aware) + Phase 4 counters.
-  applyStreak(profile, today);
-  profile.lastActivityDate = today;
-  profile.lastReviewDate = today;
-  profile.dailyXPProgress = dailyXP + boostedReviewXP;
-  profile.totalReviews += 1;
-  profile.dailyReviewsCount += 1;
-  profile.dailyAgainToday = profile.dailyAgainToday || rating === RATING.AGAIN;
-  profile.currentPerfectRun = rating === RATING.AGAIN ? 0 : profile.currentPerfectRun + 1;
-  const hour = localHour(now, tz);
-  if (hour < 8) profile.reviewsBefore8 += 1;
-  if (hour >= 23) profile.reviewsAfter23 += 1;
+  profile.dailyXPProgress = dailyXP + boostedAward;
+  profile.dailyXPDate = today;
 
   // Daily-goal streak (§11.3 Nanakusa/Misoka/Hitasura): consecutive goal days.
   if (bonuses.includes('goalMet')) {
@@ -132,14 +166,35 @@ export async function awardXP(user, event, payload, now = new Date()) {
     profile.goalMetDate = today;
   }
 
-  profile.totalXP += boostedReviewXP;
+  profile.totalXP += boostedAward;
   // Provisional level so LEVEL achievements evaluate against the crossing.
   const provisional = computeLevel(profile.totalXP);
   profile.currentLevel = provisional.level;
   profile.xpToNextLevel = provisional.xpToNextLevel;
 
-  // §11.3 achievements — unlocks, coins, boosted reward XP.
-  const { newly, achievementXP } = await evaluateAchievements(profile, user, { now });
+  // §11.3 achievements — unlocks, coins, boosted reward XP. Quiz signals are
+  // per-session (Flawless/Sokko); stroke/drawing counters live on the profile.
+  const achievementExtras = {};
+  if (
+    isQuiz &&
+    payload.sessionType !== 'sprint' &&
+    payload.answeredCount >= QUIZ_XP.SESSION_MIN_ANSWERS
+  ) {
+    achievementExtras.quizSession = {
+      accuracy: payload.accuracy ?? 0,
+      answeredCount: payload.answeredCount,
+    };
+  }
+  if (isQuiz && payload.sessionType === 'sprint') {
+    achievementExtras.sprint = {
+      durationSec: payload.sprintDurationSec ?? QUIZ_SPRINT_SECONDS,
+      correct: payload.correctCount ?? 0,
+    };
+  }
+  const { newly, achievementXP } = await evaluateAchievements(profile, user, {
+    now,
+    ...achievementExtras,
+  });
   profile.totalXP += achievementXP;
 
   // §11.2 final level after every XP source landed.
@@ -152,7 +207,7 @@ export async function awardXP(user, event, payload, now = new Date()) {
   const streakMilestone = crossedMilestone(previousStreak, profile.currentStreak);
 
   return {
-    awarded: boostedReviewXP,
+    awarded: boostedAward,
     bonuses,
     totalXP: profile.totalXP,
     dailyXPProgress: profile.dailyXPProgress,
