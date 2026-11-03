@@ -1,5 +1,5 @@
 /**
- * Live smoke test - run after every phase's deploy (53 checks).
+ * Live smoke test - run after every phase's deploy (52 checks).
  *
  *   node deploy/smoke.mjs                       # defaults to https://kanjiquest.vercel.app
  *   node deploy/smoke.mjs https://my-app.vercel.app

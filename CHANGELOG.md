@@ -15,7 +15,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 - **Achievements (D16):** stroke/drawing counters are per question; `Kanpeki 完璧` (100% over ≥10) and `Sokko 即交` (20+ in 60s) are per session; `Itsutsu 五つ` records each completed mode. New profile counters (`quizModesPlayed`, `perfectStrokeQuestions`, `highDrawingQuestions`) keep evaluation aggregation-free.
 - **Client session UX (§7.6):** full-screen 640px flow with progress bar (sprint timer), server-confirmed feedback, 1–4 / Space / `?` shortcuts, summary (accuracy, XP, best sprint streak, goal-met chip), gamification merge + toasts, and the **leave guard** for in-app back, browser back, and tab close.
 - **Data ops:** new `QuizSession` collection + indexes; `scripts/migrate-070.js` backfills `dailyXPDate` from `lastActivityDate` and ensures the quiz indexes.
-- **Tests:** server **187** (+31 — quiz service ×10, drawing scorer ×19, achievement/quest/XP coverage), client **65** (+9 — hub ×2, session ×4, drawing ×3), live smoke **53 checks** (+10 — overview/fallback, full 10-question session, idempotent submit, D13 daily-vs-streak, sprint clock/guard, anonymous quiz guard). Details: [version/0.7.0.md](version/0.7.0.md)
+- **Tests:** server **187** (+31 — quiz service ×10, drawing scorer ×19, achievement/quest/XP coverage), client **65** (+9 — hub ×2, session ×4, drawing ×3), live smoke **52 checks** (+9 — overview/fallback, full 10-question session, idempotent submit, D13 daily-vs-streak, sprint clock/guard, anonymous quiz guard). Details: [version/0.7.0.md](version/0.7.0.md)
 
 ## [0.6.0] — 2026-10-31 — Daily quests + statistics (Phase 5) · tag `phase-5-complete`
 
