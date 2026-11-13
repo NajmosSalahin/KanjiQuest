@@ -821,7 +821,9 @@ let storeSnapshot = null;
   );
 
   if (avatarUrl) {
-    const gone = await fetch(BASE + avatarUrl);
+    // Immutable assets are cached at the Vercel edge, so bust the CDN cache to
+    // assert the origin actually removed the bytes.
+    const gone = await fetch(`${BASE}${avatarUrl}?after=delete`);
     check('deleted avatar asset -> 404', gone.status === 404, `status=${gone.status}`);
   }
 }
