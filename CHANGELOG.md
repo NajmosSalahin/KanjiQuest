@@ -6,6 +6,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-11-13 — Store, leaderboard, profile (Phase 7) · tag `phase-7-complete`
+
+- **Store (§6.11 / §7.10):** eight server-priced items — Streak freeze (50, max 2), XP boost (100, 1.5×/24h), titles The Diligent 25 / Kokoro no Tsuchi 50 / Yama no Ue 75, frames Sakura / Take / Tsuki 100. `GET /store/items` returns live `owned`/`equipped`/`active`/cap/affordability state; `GET /store/inventory` lists owned items; `/store` renders the catalogue with badges, balance, confirmation modal, equip/unequip, and insufficient-funds hints.
+- **Atomic purchases + effects (D17):** conditional balance/cap updates, inventory rows, compensating writes on follow-up failure, freeze counter increment, **boost extension from `max(now, expiry)` by 24h**, permanent titles/frames, and `400 INSUFFICIENT_COINS` / `409 ALREADY_OWNED` / `409 MAX_FREEZES` / `404 ITEM_NOT_FOUND`.
+- **Weekly XP + leaderboards (D18/D19):** `weeklyXP` counts every XP source (reviews, quiz, sprint, quests, sweep, goal bonus, achievements), lazily resets Monday 00:00 UTC, and ignores purchases; undo only subtracts in the award week. `GET /leaderboard` aggregates live with XP descending, **competition ranks for ties**, deterministic tie display, top **100**, and a sticky current-user row. `/leaderboard` ships Weekly/All-time tabs, podium styling, and a specific no-weekly-XP empty state; the dashboard gains its “This week” top-five mini-board.
+- **Profile (§7.8 / §6.13):** three tabs with an identity card (128px frame-aware avatar, level shield, joined date), XP/streak/mastered stats, inline display-name edit, inventory-backed title picker, achievements grid + detail modal with locked progress, and auto-saving settings for theme, daily goal, review limit, furigana, sound, haptics, reminder, JLPT, and timezone. Includes logout and typed-name account deletion with a full cascade.
+- **Avatars (D17):** validated multipart upload (JPEG/PNG/WebP magic bytes, 2 MB cap) through a storage adapter — local disk in dev/test, Mongo `avatarAssets` in production served by public immutable `GET /api/v1/assets/:id`; replace/delete removes old bytes, and account deletion clears all assets. `render.yaml` sets `STORAGE_DRIVER=mongo`.
+- **Theme bootstrap:** auto/light/dark resolves from the cached preference before hydration, follows OS changes while auto, and saves through settings.
+- **Data ops:** new `AvatarAsset`/`UserInventory` models; `GamificationProfile` gains `weeklyXP`, `weeklyXPWeek`, `streakFreezesUsed`, `equippedFrame`; `migrate-080` creates indexes, initializes fields, and mirrors existing freezes. The freeze achievement is now active. v0.8.0 starts the weekly board at 0 (no backfill).
+- **Tests:** server **203** (+16 — store ×7, leaderboard ×5, users ×4; achievements updated for active freeze), client **83** (+18 — store ×3, leaderboard ×3, profile ×7, theme ×4, dashboard mini-board), live smoke **67 checks** (+15 — store/leaderboard/profile/avatar, anonymous guards). Details: [version/0.8.0.md](version/0.8.0.md)
+
 ## [0.7.0] — 2026-11-03 — Quiz modes (Phase 6) · tag `phase-6-complete`
 
 - **Quiz hub (§7.5):** `/quiz` shows the five modes as cards with 96px inline SVG icons, live per-mode counts, and the approved **“practice set”** fallback label. Counts come from the new **`GET /quiz/overview`** (D15).

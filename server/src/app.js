@@ -2,11 +2,14 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import { fileURLToPath } from 'node:url';
 import { env } from './config/env.js';
 import { apiRouter } from './routes/index.js';
 import { notFound, errorHandler } from './middleware/errors.js';
 import { csrfHeaderCheck } from './middleware/csrf.js';
 import { limiter, DEFAULT_RATE_LIMITS } from './middleware/rateLimit.js';
+
+const UPLOAD_ROOT = fileURLToPath(new URL('../uploads', import.meta.url));
 
 export function createApp(options = {}) {
   const rateLimits = { ...DEFAULT_RATE_LIMITS, ...options.rateLimits };
@@ -20,6 +23,12 @@ export function createApp(options = {}) {
   app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
+
+  // D17 local storage driver (development/test): avatar bytes from disk.
+  app.use(
+    '/uploads',
+    express.static(UPLOAD_ROOT, { maxAge: '1y', immutable: true, fallthrough: true })
+  );
 
   // CSRF: SameSite=Strict cookies + X-Requested-With header requirement
   // (DECISIONS.md).

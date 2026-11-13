@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { xpToNextLevel, DEFAULT_DAILY_GOAL_XP } from '@kanjigarden/shared';
+import { weekStartUTC } from '../services/weekly.js';
 
 /** gamificationProfile — prompt.md §8. Created at registration (Phase 1).
  *  Fields beyond §8 are Phase 4 additive counters (DECISIONS.md): each powers
@@ -21,11 +22,17 @@ const gamificationProfileSchema = new Schema({
   unlockedAchievementIds: { type: [String], default: [] },
   /** id -> unlock Date (D11 supplement; unlockedAchievementIds stays §8-canonical). */
   achievementUnlocks: { type: Map, of: Date, default: () => new Map() },
-  equippedTitle: { type: String, default: null },
+  equippedTitle: { type: String, default: null }, // store item id (D17)
+  equippedFrame: { type: String, default: null }, // store item id (D17)
   xpBoostExpiresAt: { type: Date, default: null },
+  /** Weekly leaderboard counter; lazily reset on Monday 00:00 UTC (D18). */
+  weeklyXP: { type: Number, default: 0 },
+  weeklyXPWeek: { type: String, default: null }, // YYYY-MM-DD, Monday UTC
 
   // — Phase 4 additive (DECISIONS.md "Implementation notes (Phase 4)") —
   streakFreezes: { type: Number, default: 0 }, // store (Phase 7) grants these
+  /** Freeze consumptions (Mamori, §11.3); additive Phase 7 counter. */
+  streakFreezesUsed: { type: Number, default: 0 },
   goalStreak: { type: Number, default: 0 }, // consecutive daily-goal days (§11.3)
   goalMetDate: { type: String, default: null },
   totalReviews: { type: Number, default: 0 },
@@ -55,6 +62,11 @@ export function gamificationSummary(profile) {
     longestStreak: profile.longestStreak,
     coins: profile.coins,
     dailyGoalXP: profile.dailyGoalXP,
+    weeklyXP: profile.weeklyXPWeek === weekStartUTC() ? (profile.weeklyXP ?? 0) : 0,
+    streakFreezes: profile.streakFreezes ?? 0,
+    equippedTitle: profile.equippedTitle ?? null,
+    equippedFrame: profile.equippedFrame ?? null,
+    xpBoostExpiresAt: profile.xpBoostExpiresAt ?? null,
   };
 }
 
@@ -64,6 +76,8 @@ export async function createGamificationProfile(userId, dailyGoalXP = DEFAULT_DA
     userId,
     dailyGoalXP,
     xpToNextLevel: xpToNextLevel(1),
+    weeklyXP: 0,
+    weeklyXPWeek: weekStartUTC(),
   });
 }
 

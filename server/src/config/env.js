@@ -18,6 +18,8 @@ const schema = z
     JWT_ACCESS_SECRET: z.string().default(''),
     JWT_REFRESH_SECRET: z.string().default(''),
     LOG_LEVEL: z.string().default('info'),
+    /** D17: avatar storage driver. Unset = local in dev/test, Mongo in prod. */
+    STORAGE_DRIVER: z.enum(['local', 'mongo']).optional(),
   })
   .superRefine((env, ctx) => {
     if (!isProduction) return;

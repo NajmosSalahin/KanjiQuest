@@ -17,6 +17,11 @@ export const useAuth = create((set) => ({
     set((state) => ({ gamification: { ...state.gamification, ...partial } }));
   },
 
+  /** Partial user refresh after profile/settings/avatar updates. */
+  mergeUser(partial) {
+    set((state) => ({ user: { ...state.user, ...partial } }));
+  },
+
   async hydrate() {
     try {
       const data = await api('/users/me');

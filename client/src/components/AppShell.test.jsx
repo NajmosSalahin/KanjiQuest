@@ -50,6 +50,8 @@ describe('AppShell chrome (§7)', () => {
     await user.click(screen.getByRole('button', { name: 'Profile menu' }));
     const menu = screen.getByRole('menu');
     expect(menu.textContent).toContain('Profile');
+    expect(menu.textContent).toContain('Store');
+    expect(menu.textContent).toContain('Leaderboard');
     expect(menu.textContent).toContain('Settings');
     await user.click(screen.getByRole('menuitem', { name: /sign out/i }));
     // logout() hits the API; the store flips to guest regardless (finally block).

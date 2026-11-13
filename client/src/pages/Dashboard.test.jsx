@@ -116,11 +116,59 @@ const QUESTS = {
   sweepReward: 30,
 };
 
+const BOARD = {
+  period: 'weekly',
+  weekStart: '2026-03-09',
+  entries: [
+    {
+      rank: 1,
+      userId: 'u2',
+      displayName: 'Aiko Tanaka',
+      avatarUrl: null,
+      title: 'Yama no Ue',
+      equippedFrame: null,
+      xp: 320,
+      isYou: false,
+    },
+    {
+      rank: 2,
+      userId: 'u1',
+      displayName: 'Rina Kobayashi',
+      avatarUrl: null,
+      title: 'The Diligent',
+      equippedFrame: 'frame-sakura',
+      xp: 120,
+      isYou: true,
+    },
+    {
+      rank: 3,
+      userId: 'u3',
+      displayName: 'Kenji Sato',
+      avatarUrl: null,
+      title: null,
+      equippedFrame: null,
+      xp: 90,
+      isYou: false,
+    },
+  ],
+  me: {
+    rank: 2,
+    userId: 'u1',
+    displayName: 'Rina Kobayashi',
+    avatarUrl: null,
+    title: 'The Diligent',
+    equippedFrame: 'frame-sakura',
+    xp: 120,
+    isYou: true,
+  },
+};
+
 function mockApi({
   profile = makeProfile(),
   due = DUE_POSITIVE,
   stats = { total: 40 },
   quests = QUESTS,
+  board = BOARD,
 } = {}) {
   api.mockReset();
   api.mockImplementation(async (path, opts = {}) => {
@@ -128,6 +176,7 @@ function mockApi({
     if (path.startsWith('/progress/due')) return due;
     if (path === '/progress/stats') return stats;
     if (path === '/quests/today') return quests;
+    if (path === '/leaderboard?period=weekly') return board;
     if (path === '/gamification/streak/repair' && opts.method === 'POST') return REPAIR_RESULT;
     throw new Error(`unexpected api path: ${path}`);
   });
@@ -188,7 +237,7 @@ describe('Dashboard (§7.1)', () => {
 
     // Due card.
     expect(screen.getByText('due now')).toBeTruthy();
-    expect(screen.getByText('3')).toBeTruthy();
+    expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows the milestone bar label once the streak reaches 7 (spec: "10 days to Sakura")', async () => {
@@ -322,5 +371,22 @@ describe('Dashboard (§7.1)', () => {
 
     const button = await screen.findByRole('button', { name: /Need 100 coins/ });
     expect(button.disabled).toBe(true);
+  });
+
+  it('renders the weekly mini-leaderboard with a highlighted current-user row', async () => {
+    renderDashboard();
+
+    expect(await screen.findByRole('heading', { name: 'This week' })).toBeTruthy();
+    expect(screen.getByText('Aiko Tanaka')).toBeTruthy();
+    expect(screen.getByText('Yama no Ue')).toBeTruthy();
+    expect(screen.getByText('320')).toBeTruthy();
+    expect(screen.getByText('Rina Kobayashi')).toBeTruthy();
+    expect(screen.getAllByText('You').length).toBeGreaterThanOrEqual(1);
+
+    const link = screen.getByRole('link', { name: 'Full leaderboard →' });
+    expect(link.getAttribute('href')).toBe('/leaderboard');
+
+    const meRow = screen.getByText('Rina Kobayashi').closest('li');
+    expect(meRow.className).toContain('bg-subtle');
   });
 });

@@ -19,6 +19,7 @@ import { UserQuest } from '../models/UserQuest.js';
 import { evaluateAchievements } from './achievements.js';
 import { localDay, localHour } from './time.js';
 import { computeLevel } from './xp.js';
+import { addWeeklyXP } from './weekly.js';
 
 export const QUEST_DEFS = Object.freeze([
   {
@@ -406,6 +407,8 @@ async function settleRewards(user, date, claimableRows, sweepClaimed, now) {
     ...(sweepClaimed ? { questSweep: 1 } : {}),
   });
   profile.totalXP += achievementXP;
+  // D18: quests, the sweep, and their achievement XP all feed the weekly board.
+  addWeeklyXP(profile, questXP + sweepXP + achievementXP, now);
   const finalLevel = computeLevel(profile.totalXP);
   profile.currentLevel = finalLevel.level;
   profile.xpToNextLevel = finalLevel.xpToNextLevel;
@@ -417,6 +420,7 @@ async function settleRewards(user, date, claimableRows, sweepClaimed, now) {
     xpToNextLevel: finalLevel.xpToNextLevel,
     title: LEVEL_TITLES[finalLevel.level - 1],
     coins: profile.coins,
+    weeklyXP: profile.weeklyXP,
     previousLevel,
     leveledUp: finalLevel.level > previousLevel,
     newlyUnlocked: newly,

@@ -64,14 +64,14 @@ describe('D11 roster (41 achievements)', () => {
     expect(loaded).toHaveLength(41);
   });
 
-  it('activates quests and quiz criteria while store/freeze criteria stay dormant', () => {
+  it('activates quest, quiz, and store criteria while keeping no dormant types', () => {
     expect(DORMANT.has(CRITERIA.QUIZ_ACCURACY)).toBe(false);
     expect(DORMANT.has(CRITERIA.SPRINT)).toBe(false);
     expect(DORMANT.has(CRITERIA.STROKE_PERFECT)).toBe(false);
     expect(DORMANT.has(CRITERIA.DRAWING_SCORE)).toBe(false);
     expect(DORMANT.has(CRITERIA.QUIZ_MODES_ALL)).toBe(false);
     expect(DORMANT.has(CRITERIA.QUEST_SWEEP)).toBe(false);
-    expect(DORMANT.has(CRITERIA.FREEZE_USED)).toBe(true);
+    expect(DORMANT.has(CRITERIA.FREEZE_USED)).toBe(false);
     expect(DORMANT.has(CRITERIA.STREAK)).toBe(false);
   });
 });
@@ -111,6 +111,10 @@ describe('criteria + progress (cheap signals)', () => {
       true
     );
     expect(criteriaMet({ type: CRITERIA.STREAK_REPAIR, threshold: 1 }, signals)).toBe(true);
+    expect(criteriaMet({ type: CRITERIA.FREEZE_USED }, signals)).toBe(false);
+    expect(criteriaMet({ type: CRITERIA.FREEZE_USED }, { ...signals, freezeUsedCount: 1 })).toBe(
+      true
+    );
     expect(criteriaMet({ type: CRITERIA.UNLOCK_COUNT, threshold: 32 }, signals)).toBe(false);
     expect(
       criteriaMet({ type: CRITERIA.ACCURACY_30D, minPercent: 90, minReviews: 30 }, signals)
@@ -190,7 +194,10 @@ describe('criteria + progress (cheap signals)', () => {
     expect(
       progressFor({ type: CRITERIA.QUIZ_ACCURACY, minPercent: 100, minAnswers: 10 }, signals)
     ).toEqual({ current: 0, target: 100 });
-    expect(progressFor({ type: CRITERIA.FREEZE_USED, threshold: 1 }, signals)).toBeNull();
+    expect(progressFor({ type: CRITERIA.FREEZE_USED }, signals)).toEqual({
+      current: 0,
+      target: 1,
+    });
   });
 });
 

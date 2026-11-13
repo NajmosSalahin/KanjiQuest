@@ -3,12 +3,14 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   BookOpen,
+  Coins,
   Home,
   Leaf,
   LogOut,
   Menu,
   RotateCcw,
   Settings,
+  Trophy,
   User,
   X,
 } from 'lucide-react';
@@ -60,6 +62,7 @@ function ProfileMenu() {
   const ref = useRef(null);
   const navigate = useNavigate();
   const user = useAuth((s) => s.user);
+  const gamification = useAuth((s) => s.gamification);
   const logout = useAuth((s) => s.logout);
 
   useEffect(() => {
@@ -98,9 +101,16 @@ function ProfileMenu() {
           size={32}
           name={user?.displayName}
           src={user?.avatarUrl}
+          frame={gamification?.equippedFrame}
           className="hidden md:flex"
         />
-        <Avatar size={28} name={user?.displayName} src={user?.avatarUrl} className="md:hidden" />
+        <Avatar
+          size={28}
+          name={user?.displayName}
+          src={user?.avatarUrl}
+          frame={gamification?.equippedFrame}
+          className="md:hidden"
+        />
       </button>
       {open ? (
         <div
@@ -124,7 +134,29 @@ function ProfileMenu() {
             className={menuItemClass}
             onClick={() => {
               setOpen(false);
-              navigate('/settings');
+              navigate('/store');
+            }}
+          >
+            <Coins size={16} aria-hidden="true" /> Store
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className={menuItemClass}
+            onClick={() => {
+              setOpen(false);
+              navigate('/leaderboard');
+            }}
+          >
+            <Trophy size={16} aria-hidden="true" /> Leaderboard
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className={menuItemClass}
+            onClick={() => {
+              setOpen(false);
+              navigate('/profile?tab=settings');
             }}
           >
             <Settings size={16} aria-hidden="true" /> Settings

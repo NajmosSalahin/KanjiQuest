@@ -40,7 +40,7 @@ export const CRITERIA = Object.freeze({
 });
 
 /** Criteria with no producing event yet — evaluator skips, progress is null. */
-export const DORMANT = new Set([CRITERIA.FREEZE_USED]);
+export const DORMANT = new Set();
 
 const AGGREGATE_TYPES = new Set([
   CRITERIA.LEARNED,
@@ -587,6 +587,7 @@ export function profileSignals(profile, extra = {}) {
     reviewsAfter23: profile.reviewsAfter23,
     unlockedCount: profile.unlockedAchievementIds.length,
     repairCount: profile.lastStreakRepairAt ? 1 : 0,
+    freezeUsedCount: profile.streakFreezesUsed ?? 0,
     perfectStrokeQuestions: profile.perfectStrokeQuestions ?? 0,
     highDrawingQuestions: profile.highDrawingQuestions ?? 0,
     quizModesPlayed: profile.quizModesPlayed?.length ?? 0,
@@ -650,10 +651,12 @@ export function criteriaMet(criteria, signals) {
       return (signals.highDrawingQuestions ?? 0) >= criteria.count;
     case CRITERIA.QUIZ_MODES_ALL:
       return (signals.quizModesPlayed ?? 0) >= criteria.count;
+    case CRITERIA.FREEZE_USED:
+      return (signals.freezeUsedCount ?? 0) >= 1;
     case CRITERIA.UNLOCK_COUNT:
       return signals.unlockedCount >= criteria.threshold;
     default:
-      return false; // dormant freeze type
+      return false;
   }
 }
 
@@ -710,6 +713,8 @@ export function progressFor(criteria, signals) {
       return { current: signals.highDrawingQuestions ?? 0, target: criteria.count };
     case CRITERIA.QUIZ_MODES_ALL:
       return { current: signals.quizModesPlayed ?? 0, target: criteria.count };
+    case CRITERIA.FREEZE_USED:
+      return { current: Math.min(1, signals.freezeUsedCount ?? 0), target: 1 };
     case CRITERIA.UNLOCK_COUNT:
       return { current: signals.unlockedCount, target: criteria.threshold };
     default:

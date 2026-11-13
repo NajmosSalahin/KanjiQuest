@@ -271,6 +271,26 @@ The practice pool is the user's tracked kanji in `learning`, `review`, or `relea
 - **Achievements:** stroke (`Hitsuwaza 筆技`) and drawing (`Kaite Miro 書いてみろ`) counters are **per question** (perfect stroke = zero wrong taps; drawing ≥85); `Kanpeki 完璧` (100% over ≥10 answers) and `Sokko 即交` (20+ correct in 60s) evaluate **per session**. `Itsutsu 五つ` records each completed mode once. Quiz-mode counters live on `GamificationProfile` (`quizModesPlayed`, `perfectStrokeQuestions`, `highDrawingQuestions`) so evaluation needs no aggregation.
 - **Leave guard (§7.6):** an active session confirms before the in-app back button, browser back, or tab close; “Stay” keeps the session, “Leave quiz” abandons it without XP.
 
+## Implementation notes (Phase 7 — Store, leaderboard, profile)
+
+### D17: avatar storage adapter + fixed store catalogue/effects (owner-approved)
+
+Render's free tier has an ephemeral disk, so avatars go through a **storage adapter** (`server/src/services/storage.js`):
+
+- **Development/test** (`STORAGE_DRIVER` unset, `NODE_ENV !== 'production'`): bytes are written under `server/uploads/avatars/` and served at `/uploads/avatars/...`.
+- **Production** (`STORAGE_DRIVER=mongo`): bytes live in the new `avatarAssets` collection and are served from the public, immutable `GET /api/v1/assets/:id` (`Cache-Control: public, max-age=31536000, immutable`). `render.yaml` sets `STORAGE_DRIVER=mongo`; swapping to S3/R2 later is a third driver, not a route or UI change.
+- Uploads stay server-validated: multipart field `avatar`, **2 MB** cap, JPEG/PNG/WebP magic bytes only, and a new upload deletes the previous asset. `DELETE /users/me/avatar` returns to initials and deleting the account removes every asset.
+
+The store catalogue is fixed at **8 items**: Streak freeze **50** coins (max **2** held), XP boost **100** coins (**1.5× for 24h**), titles **The Diligent 25 / Kokoro no Tsuchi 50 / Yama no Ue 75**, frames **Sakura / Take / Tsuki 100** each. Cosmetics are permanent; frames are stored as the item id (`equippedFrame`) alongside `equippedTitle`. Buying an XP boost while one is active **extends from `max(now, current expiry)` by 24 hours with no cap**, so paid time is never lost. Purchases use conditional atomic updates (balance in the filter, freeze slot capped) with compensating writes because the local test database is standalone; effect outcomes are server-authoritative.
+
+### D18: weekly XP counts every XP source and resets lazily (owner-approved)
+
+`GamificationProfile.weeklyXP` counts **all XP sources**: reviews, quiz modes, sprint, daily quests, the daily sweep, the +30 daily-goal bonus, and achievement rewards. Purchases award no XP. The bucket is keyed by `weeklyXPWeek` (UTC Monday, `YYYY-MM-DD`) and rolls to **0 at Monday 00:00 UTC** lazily on every award or leaderboard read — no cron job. Undo subtracts only when the original award belongs to the current week; a cross-week undo never touches the new week. The v0.8.0 deploy starts the live week at **0** (no backfill of the current week for existing profiles); `migrate-080` only initializes the fields for pre-0.8.0 rows.
+
+### D19: leaderboards are computed live with competition ranks (owner-approved)
+
+There is **no materialized `leaderboard` cache collection**. Each read aggregates `GamificationProfile` directly: weekly (`weeklyXPWeek` = current week, `weeklyXP > 0`) or all-time (`totalXP > 0`), **XP descending**, **competition rank for ties** (equal XP shares the best rank), and display order breaks ties by profile `createdAt` then `_id` for deterministic output. The response carries the top **100** entries plus a **sticky current-user row** (`me`); a user outside the top 100 gets a rank from the count of higher-XP profiles, and zero-XP users are excluded from top entries (their `me.rank` is `null`). This trades a little read cost for exact, drift-free ranks without cache invalidation.
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.

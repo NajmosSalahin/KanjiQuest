@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowRight,
@@ -25,6 +25,7 @@ import { useToast } from '../components/ui/Toast.jsx';
 import { EmptyState } from '../components/ui/EmptyState.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { Button } from '../components/ui/Button.jsx';
+import { Avatar } from '../components/ui/Avatar.jsx';
 import { StreakLeaf } from '../components/StreakLeaf.jsx';
 import { GoalRing } from '../components/GoalRing.jsx';
 import {
@@ -35,8 +36,8 @@ import {
   unlockToastMessage,
 } from '../lib/gamification.js';
 
-/** Dashboard — prompt.md §7.1. The mini-leaderboard is the only section
- *  deferred to Phase 7; quests ship in Phase 5. */
+/** Dashboard — prompt.md §7.1: streak, goal, due reviews, daily quests, and
+ *  the weekly mini-leaderboard. */
 
 const QUEST_ICONS = {
   'review-10': Layers,
@@ -110,6 +111,10 @@ export default function Dashboard() {
   const statsQuery = useQuery({
     queryKey: ['progress', 'stats'],
     queryFn: () => api('/progress/stats'),
+  });
+  const boardQuery = useQuery({
+    queryKey: ['leaderboard', 'weekly'],
+    queryFn: () => api('/leaderboard?period=weekly'),
   });
   const questsQuery = useQuery({
     queryKey: ['quests', 'today'],
@@ -438,6 +443,90 @@ export default function Dashboard() {
               </p>
             )}
           </>
+        )}
+      </section>
+
+      {/* Mini leaderboard (§7.1) */}
+      <section
+        aria-label="Weekly leaderboard"
+        className="rounded-card border border-line-subtle bg-surface p-6 shadow-sm"
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold text-ink-primary">This week</h2>
+          <Link
+            to="/leaderboard"
+            className="shrink-0 text-sm font-medium text-vermillion transition-colors duration-fast ease-out hover:text-vermillion-hover"
+          >
+            Full leaderboard →
+          </Link>
+        </div>
+
+        {boardQuery.isLoading ? (
+          <div className="mt-4 space-y-2">
+            {Array.from({ length: 5 }, (_, index) => (
+              <Skeleton key={index} className="h-10 rounded-control" />
+            ))}
+          </div>
+        ) : boardQuery.isError ? (
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-control bg-subtle px-3 py-2">
+            <p className="text-sm text-ink-secondary">The weekly board is unavailable.</p>
+            <Button size="md" variant="ghost" onClick={() => boardQuery.refetch()}>
+              Retry
+            </Button>
+          </div>
+        ) : (
+          (() => {
+            const entries = (boardQuery.data?.entries ?? []).slice(0, 5);
+            const me = boardQuery.data?.me;
+            const showMe = me && !entries.some((entry) => entry.isYou);
+            if (entries.length === 0 && !showMe) {
+              return (
+                <p className="mt-4 text-sm text-ink-muted">
+                  No one has earned XP this week yet. Be the first.
+                </p>
+              );
+            }
+            const rows = showMe ? [...entries, me] : entries;
+            return (
+              <ol className="mt-3 divide-y divide-line-subtle">
+                {rows.map((entry) => (
+                  <li
+                    key={entry.userId}
+                    className={cn(
+                      'flex items-center gap-3 px-2 py-2.5',
+                      entry.isYou && 'rounded-control bg-subtle'
+                    )}
+                  >
+                    <span className="w-6 shrink-0 text-right font-mono text-xs text-ink-muted">
+                      {entry.rank ?? '—'}
+                    </span>
+                    <Avatar
+                      size={28}
+                      name={entry.displayName}
+                      src={entry.avatarUrl}
+                      frame={entry.equippedFrame}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-ink-primary">
+                        {entry.displayName}
+                        {entry.isYou ? (
+                          <span className="ml-2 font-mono text-[10px] uppercase tracking-wide text-vermillion">
+                            You
+                          </span>
+                        ) : null}
+                      </p>
+                      {entry.title ? (
+                        <p className="truncate text-xs text-ink-muted">{entry.title}</p>
+                      ) : null}
+                    </div>
+                    <span className="shrink-0 font-mono text-sm text-ink-primary">
+                      {entry.xp.toLocaleString('en-US')}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            );
+          })()
         )}
       </section>
     </div>

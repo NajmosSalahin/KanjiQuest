@@ -69,12 +69,104 @@ export function xpToNextLevel(level) {
   return Math.floor(100 * Math.pow(level, 1.5));
 }
 
-/** Store prices (§6.11). */
+/**
+ * Store catalogue (§6.11 + §7.10). `type` drives the purchase/equip rules:
+ * freeze and boost are consumable effects, title and frame are permanent
+ * cosmetics. `value` is what the profile stores when a cosmetic is equipped.
+ */
+export const STORE_ITEM_TYPES = Object.freeze({
+  FREEZE: 'freeze',
+  BOOST: 'boost',
+  TITLE: 'title',
+  FRAME: 'frame',
+});
+
 export const STORE = Object.freeze({
   STREAK_FREEZE: { price: 50, maxActive: 2 },
   XP_BOOST: { price: 100, multiplier: 1.5, durationHours: 24 },
   STREAK_REPAIR_COST: 100,
+  ITEMS: Object.freeze([
+    {
+      id: 'streak-freeze',
+      type: STORE_ITEM_TYPES.FREEZE,
+      name: 'Streak freeze',
+      description: 'Protects your streak for one missed day.',
+      price: 50,
+      maxActive: 2,
+      icon: 'freeze',
+    },
+    {
+      id: 'xp-boost',
+      type: STORE_ITEM_TYPES.BOOST,
+      name: 'XP boost',
+      description: 'Earn 1.5× XP for the next 24 hours.',
+      price: 100,
+      icon: 'boost',
+    },
+    {
+      id: 'title-diligent',
+      type: STORE_ITEM_TYPES.TITLE,
+      name: 'The Diligent',
+      description: 'A title for those who show up every day.',
+      price: 25,
+      value: 'The Diligent',
+      icon: 'title',
+    },
+    {
+      id: 'title-kokoro',
+      type: STORE_ITEM_TYPES.TITLE,
+      name: 'Kokoro no Tsuchi',
+      description: 'The hammer of the heart. A title for steady hands.',
+      price: 50,
+      value: 'Kokoro no Tsuchi',
+      icon: 'title',
+    },
+    {
+      id: 'title-yama',
+      type: STORE_ITEM_TYPES.TITLE,
+      name: 'Yama no Ue',
+      description: 'Above the mountain. A title for the long climb.',
+      price: 75,
+      value: 'Yama no Ue',
+      icon: 'title',
+    },
+    {
+      id: 'frame-sakura',
+      type: STORE_ITEM_TYPES.FRAME,
+      name: 'Sakura',
+      nameJa: '桜',
+      description: 'A frame of falling cherry blossoms.',
+      price: 100,
+      value: 'sakura',
+      icon: 'frame-sakura',
+    },
+    {
+      id: 'frame-take',
+      type: STORE_ITEM_TYPES.FRAME,
+      name: 'Take',
+      nameJa: '竹',
+      description: 'A frame of clean bamboo lines.',
+      price: 100,
+      value: 'take',
+      icon: 'frame-take',
+    },
+    {
+      id: 'frame-tsuki',
+      type: STORE_ITEM_TYPES.FRAME,
+      name: 'Tsuki',
+      nameJa: '月',
+      description: 'A frame lit by a quiet moon.',
+      price: 100,
+      value: 'tsuki',
+      icon: 'frame-tsuki',
+    },
+  ]),
 });
+
+/** Look up one catalogue item by id; undefined when it does not exist. */
+export function storeItem(itemId) {
+  return STORE.ITEMS.find((item) => item.id === itemId);
+}
 
 /** Mastered = review state with interval ≥ 180 days (§10). */
 export const MASTERED_INTERVAL_DAYS = 180;

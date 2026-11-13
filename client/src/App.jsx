@@ -4,6 +4,7 @@ import { ToastProvider } from './components/ui/Toast.jsx';
 import { AppShell } from './components/AppShell.jsx';
 import { RequireAuth, RedirectIfAuthed } from './components/guards.jsx';
 import { useAuth } from './stores/auth.js';
+import { applyTheme, watchSystemTheme } from './lib/theme.js';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -16,13 +17,23 @@ const Review = lazy(() => import('./pages/Review.jsx'));
 const QuizHub = lazy(() => import('./pages/QuizHub.jsx'));
 const QuizSession = lazy(() => import('./pages/QuizSession.jsx'));
 const Stats = lazy(() => import('./pages/Stats.jsx'));
+const Store = lazy(() => import('./pages/Store.jsx'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard.jsx'));
+const Profile = lazy(() => import('./pages/Profile.jsx'));
 
 const isDev = import.meta.env.DEV;
 
 export default function App() {
+  const themePreference = useAuth((state) => state.user?.preferences?.theme ?? 'auto');
+
   useEffect(() => {
     useAuth.getState().hydrate();
   }, []);
+
+  useEffect(() => {
+    applyTheme(themePreference);
+    return themePreference === 'auto' ? watchSystemTheme(() => applyTheme('auto')) : undefined;
+  }, [themePreference]);
 
   return (
     <ToastProvider>
@@ -61,6 +72,10 @@ export default function App() {
               <Route path="/quiz" element={<QuizHub />} />
               <Route path="/licenses" element={<Licenses />} />
               <Route path="/stats" element={<Stats />} />
+              <Route path="/store" element={<Store />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Navigate to="/profile?tab=settings" replace />} />
             </Route>
             {/* /review is full-screen (§7.2): gated, but outside the shell —
                 global chrome is replaced by the session's own top bar. */}

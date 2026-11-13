@@ -68,3 +68,42 @@ export async function api(path, options = {}) {
     return request(path, options);
   }
 }
+
+/** Multipart upload with the same auth/CSRF/refresh behaviour as `api`. */
+export async function apiUpload(path, file, field = 'avatar') {
+  const body = new FormData();
+  body.append(field, file);
+  const send = () =>
+    fetch(BASE + path, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body,
+    }).then(async (res) => {
+      let json = null;
+      try {
+        json = await res.json();
+      } catch {
+        // non-JSON error body
+      }
+      if (!res.ok) {
+        throw new ApiError(
+          res.status,
+          json?.error?.code ?? 'UNKNOWN',
+          json?.error?.message ?? 'Upload failed.',
+          json?.error?.fields
+        );
+      }
+      return json.data;
+    });
+
+  try {
+    return await send();
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) {
+      await refreshOnce();
+      return send();
+    }
+    throw err;
+  }
+}

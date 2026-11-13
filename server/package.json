@@ -1,6 +1,6 @@
 {
   "name": "@kanjigarden/server",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,6 +14,7 @@
     "migrate-050": "node src/scripts/migrate-050.js",
     "migrate-060": "node src/scripts/migrate-060.js",
     "migrate-070": "node src/scripts/migrate-070.js",
+    "migrate-080": "node src/scripts/migrate-080.js",
     "seed-quests": "node src/scripts/seed-quests.js"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "kuroshiro": "^1.2.1",
     "kuroshiro-analyzer-kuromoji": "^1.1.0",
     "mongoose": "^8.6.0",
+    "multer": "^2.5.0",
     "nanoid": "^5.0.7",
     "pino": "^9.4.0",
     "zod": "^3.23.8"

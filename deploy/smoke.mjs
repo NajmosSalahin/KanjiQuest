@@ -1,5 +1,5 @@
 /**
- * Live smoke test - run after every phase's deploy (52 checks).
+ * Live smoke test - run after every phase's deploy (67 checks).
  *
  *   node deploy/smoke.mjs                       # defaults to https://kanjiquest.vercel.app
  *   node deploy/smoke.mjs https://my-app.vercel.app
@@ -15,7 +15,10 @@
  * quests + sweep reward) and statistics (365 heatmap, next-30 forecast,
  * 30-day accuracy, N5-N3 JLPT, best/worst, query validation), Phase 6 quiz
  * modes (overview/fallback, a full 10-question meaning session, idempotent
- * submit, D13 daily-XP accounting, sprint clock + active-submit guard),
+ * submit, D13 daily-XP accounting, sprint clock + active-submit guard), Phase 7
+ * store (catalogue, inventory, purchase/equip validation), leaderboards
+ * (weekly + all-time + sticky row), auto-saving profile preferences, and
+ * avatar upload/serve/delete through the D17 storage adapter,
  * logout, SPA fallback, security headers.
  *
  * Registers a throwaway `smoke+<epoch>@example.com` user; when a root `.env`
@@ -605,6 +608,224 @@ let registerSetCookies = [];
   );
 }
 
+// 22h. Phase 7 (§6.11/§7.10): store catalogue, inventory, purchase validation
+let storeSnapshot = null;
+{
+  const r = await call('/api/v1/store/items');
+  const d = r.json?.data;
+  const items = d?.items ?? [];
+  const types = items.reduce((acc, item) => {
+    acc[item.type] = (acc[item.type] ?? 0) + 1;
+    return acc;
+  }, {});
+  storeSnapshot = d;
+  check(
+    'store/items -> 8 items (freeze, boost, 3 titles, 3 frames) + live state',
+    r.status === 200 &&
+      items.length === 8 &&
+      types.freeze === 1 &&
+      types.boost === 1 &&
+      types.title === 3 &&
+      types.frame === 3 &&
+      items.every(
+        (item) =>
+          Number.isFinite(item.price) &&
+          typeof item.canBuy === 'boolean' &&
+          Number.isFinite(item.remainingCoins) &&
+          'owned' in item &&
+          'equipped' in item
+      ) &&
+      typeof d?.coins === 'number',
+    `items=${items.length} coins=${d?.coins}`
+  );
+
+  const inv = await call('/api/v1/store/inventory');
+  check(
+    'store/inventory -> owned items array',
+    inv.status === 200 && Array.isArray(inv.json?.data?.items),
+    `items=${inv.json?.data?.items?.length}`
+  );
+
+  const missing = await call('/api/v1/gamification/store/purchase', {
+    method: 'POST',
+    body: { itemId: 'not-a-real-item' },
+  });
+  check(
+    'store purchase unknown item -> 404 ITEM_NOT_FOUND',
+    missing.status === 404 && missing.json?.error?.code === 'ITEM_NOT_FOUND',
+    `status=${missing.status} code=${missing.json?.error?.code}`
+  );
+
+  const buyable = items.find((item) => item.canBuy);
+  if (buyable) {
+    const buy = await call('/api/v1/gamification/store/purchase', {
+      method: 'POST',
+      body: { itemId: buyable.id },
+    });
+    const b = buy.json?.data;
+    check(
+      'store purchase -> deducts coins + records inventory',
+      buy.status === 200 &&
+        b?.coins === (d?.coins ?? 0) - buyable.price &&
+        (b?.inventory?.quantity ?? 0) >= 1,
+      `item=${buyable.id} status=${buy.status} coins=${b?.coins}`
+    );
+  } else {
+    const unaffordable = items.find((item) => item.disabledReason === 'INSUFFICIENT_COINS');
+    const buy = await call('/api/v1/gamification/store/purchase', {
+      method: 'POST',
+      body: { itemId: unaffordable?.id ?? 'xp-boost' },
+    });
+    check(
+      'store purchase without coins -> 400 INSUFFICIENT_COINS',
+      buy.status === 400 && buy.json?.error?.code === 'INSUFFICIENT_COINS',
+      `item=${unaffordable?.id} status=${buy.status} code=${buy.json?.error?.code}`
+    );
+  }
+
+  const equipped = await call('/api/v1/gamification/store/equip', {
+    method: 'POST',
+    body: { slot: 'title', itemId: 'title-yama' },
+  });
+  check(
+    'store equip unowned title -> 403 NOT_OWNED',
+    equipped.status === 403 && equipped.json?.error?.code === 'NOT_OWNED',
+    `status=${equipped.status} code=${equipped.json?.error?.code}`
+  );
+}
+
+// 22i. Phase 7 (§6.12/§7.9): live weekly + all-time boards with sticky row
+{
+  const weekly = await call('/api/v1/leaderboard?period=weekly');
+  const w = weekly.json?.data;
+  check(
+    'leaderboard weekly -> top 100 + ranked sticky me',
+    weekly.status === 200 &&
+      w?.period === 'weekly' &&
+      /^\d{4}-\d{2}-\d{2}$/.test(w?.weekStart ?? '') &&
+      Array.isArray(w?.entries) &&
+      w.entries.length <= 100 &&
+      w?.me?.isYou === true &&
+      w.me.xp >= 1 &&
+      w.me.rank >= 1,
+    `entries=${w?.entries?.length} myXP=${w?.me?.xp} rank=${w?.me?.rank}`
+  );
+
+  const allTime = await call('/api/v1/leaderboard?period=allTime');
+  const a = allTime.json?.data;
+  check(
+    'leaderboard all-time -> totalXP board + sticky me',
+    allTime.status === 200 &&
+      a?.period === 'allTime' &&
+      a?.weekStart === null &&
+      Array.isArray(a?.entries) &&
+      a?.me?.isYou === true &&
+      a.me.xp >= 1,
+    `entries=${a?.entries?.length} myXP=${a?.me?.xp}`
+  );
+
+  const bad = await call('/api/v1/leaderboard?period=monthly');
+  check(
+    'leaderboard invalid period -> 400 VALIDATION_ERROR',
+    bad.status === 400 && bad.json?.error?.code === 'VALIDATION_ERROR',
+    `status=${bad.status} code=${bad.json?.error?.code}`
+  );
+}
+
+// 22j. Phase 7 (§6.13/§7.8): auto-save preferences + profile fields + goal mirror
+{
+  const prefs = await call('/api/v1/users/me/preferences', {
+    method: 'PATCH',
+    body: {
+      theme: 'dark',
+      dailyGoalXP: 100,
+      reminderEnabled: true,
+      reminderTime: '19:30',
+    },
+  });
+  const p = prefs.json?.data?.preferences;
+  check(
+    'users/me/preferences -> theme + goal + reminder persist',
+    prefs.status === 200 &&
+      p?.theme === 'dark' &&
+      p?.dailyGoalXP === 100 &&
+      p?.reminderEnabled === true &&
+      p?.reminderTime === '19:30',
+    `status=${prefs.status} goal=${p?.dailyGoalXP} theme=${p?.theme}`
+  );
+
+  const updated = await call('/api/v1/users/me', {
+    method: 'PATCH',
+    body: { jlptLevel: 5, timezone: 'UTC' },
+  });
+  check(
+    'users/me -> JLPT + timezone update',
+    updated.status === 200 &&
+      updated.json?.data?.user?.jlptLevel === 5 &&
+      updated.json?.data?.user?.timezone === 'UTC',
+    `status=${updated.status} jlpt=${updated.json?.data?.user?.jlptLevel}`
+  );
+
+  const gp = await call('/api/v1/gamification/profile');
+  check(
+    'daily goal preference mirrors into gamification profile',
+    gp.status === 200 && gp.json?.data?.dailyGoalXP === 100,
+    `goal=${gp.json?.data?.dailyGoalXP}`
+  );
+}
+
+// 22k. Phase 7 (D17): avatar upload -> public immutable asset -> delete
+{
+  const png = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0x49, 0x45, 0x4e, 0x44,
+  ]);
+  const form = new FormData();
+  form.append('avatar', new Blob([png], { type: 'image/png' }), 'avatar.png');
+  const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+  const ck = cookieHeader();
+  if (ck) headers.Cookie = ck;
+  const res = await fetch(BASE + '/api/v1/users/me/avatar', {
+    method: 'POST',
+    headers,
+    body: form,
+  });
+  let json = null;
+  try {
+    json = await res.json();
+  } catch {}
+  const avatarUrl = json?.data?.avatarUrl;
+  check(
+    'avatar upload -> Mongo storage URL (D17)',
+    res.status === 200 &&
+      json?.data?.driver === 'mongo' &&
+      /^\/api\/v1\/assets\/[a-f0-9]{24}$/.test(avatarUrl ?? ''),
+    `status=${res.status} driver=${json?.data?.driver} url=${avatarUrl}`
+  );
+
+  if (avatarUrl) {
+    const asset = await fetch(BASE + avatarUrl);
+    check(
+      'avatar asset -> public image, immutable cache',
+      asset.status === 200 &&
+        /image\/png/.test(asset.headers.get('content-type') ?? '') &&
+        /immutable/.test(asset.headers.get('cache-control') ?? ''),
+      `status=${asset.status} type=${asset.headers.get('content-type')}`
+    );
+  }
+
+  const removed = await call('/api/v1/users/me/avatar', { method: 'DELETE' });
+  check(
+    'avatar delete -> back to initials',
+    removed.status === 200 && removed.json?.data?.avatarUrl === null,
+    `status=${removed.status}`
+  );
+
+  if (avatarUrl) {
+    const gone = await fetch(BASE + avatarUrl);
+    check('deleted avatar asset -> 404', gone.status === 404, `status=${gone.status}`);
+  }
+}
+
 // 23. logout invalidates
 {
   const r = await call('/api/v1/auth/logout', { method: 'POST' });
@@ -637,10 +858,16 @@ let registerSetCookies = [];
   const quests = await call('/api/v1/quests/today');
   const stats = await call('/api/v1/stats');
   const quizOverview = await call('/api/v1/quiz/overview');
+  const store = await call('/api/v1/store/items');
+  const leaderboard = await call('/api/v1/leaderboard');
   check(
-    'anonymous /quests/today + /stats + /quiz/overview -> 401',
-    quests.status === 401 && stats.status === 401 && quizOverview.status === 401,
-    `quests=${quests.status} stats=${stats.status} quiz=${quizOverview.status}`
+    'anonymous /quests/today + /stats + /quiz/overview + /store + /leaderboard -> 401',
+    quests.status === 401 &&
+      stats.status === 401 &&
+      quizOverview.status === 401 &&
+      store.status === 401 &&
+      leaderboard.status === 401,
+    `quests=${quests.status} stats=${stats.status} quiz=${quizOverview.status} store=${store.status} board=${leaderboard.status}`
   );
 }
 
@@ -701,6 +928,9 @@ try {
         await db.collection('gamificationprofiles').deleteMany({ userId: { $in: ids } });
         await db.collection('userprogresses').deleteMany({ userId: { $in: ids } });
         await db.collection('quizsessions').deleteMany({ userId: { $in: ids } });
+        await db.collection('userquests').deleteMany({ userId: { $in: ids } });
+        await db.collection('userinventories').deleteMany({ userId: { $in: ids } });
+        await db.collection('avatarassets').deleteMany({ userId: { $in: ids } });
         await db.collection('users').deleteMany({ _id: { $in: ids } });
         console.log(`cleanup: removed smoke user ${EMAIL}`);
       }

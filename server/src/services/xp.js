@@ -26,6 +26,8 @@ import { ensureGamificationProfile } from '../models/GamificationProfile.js';
 import { applyStreak, crossedMilestone } from './streak.js';
 import { evaluateAchievements } from './achievements.js';
 import { localDay, localHour, addDays } from './time.js';
+import { addWeeklyXP, rollWeeklyXP, subtractWeeklyXP } from './weekly.js';
+import { consumeFreezeInventory } from './store.js';
 
 export { localDay, localHour };
 
@@ -80,6 +82,9 @@ export async function awardXP(user, event, payload, now = new Date()) {
   const today = localDay(now, tz);
   const yesterday = addDays(today, -1);
 
+  // D18: lazily roll the weekly bucket before snapshotting or awarding.
+  rollWeeklyXP(profile, now);
+
   // Exact-restore snapshot for undo (history[].gami).
   const gami = {
     totalReviews: profile.totalReviews,
@@ -91,6 +96,8 @@ export async function awardXP(user, event, payload, now = new Date()) {
     goalStreak: profile.goalStreak,
     goalMetDate: profile.goalMetDate,
     dailyCountersDate: profile.dailyCountersDate,
+    weeklyXP: profile.weeklyXP,
+    weeklyXPWeek: profile.weeklyXPWeek,
   };
 
   const previousLevel = profile.currentLevel;
@@ -102,6 +109,7 @@ export async function awardXP(user, event, payload, now = new Date()) {
   const goalAlreadyMet = profile.dailyXPDate === today && dailyXP >= profile.dailyGoalXP;
 
   let awarded = 0;
+  let freezesUsed = 0;
   const bonuses = [];
 
   if (!isQuiz) {
@@ -124,7 +132,11 @@ export async function awardXP(user, event, payload, now = new Date()) {
     }
 
     // §11.4 streak (timezone-correct, freeze-aware) + Phase 4 counters.
-    applyStreak(profile, today);
+    const appliedStreak = applyStreak(profile, today);
+    if (appliedStreak.froze > 0) {
+      freezesUsed = appliedStreak.froze;
+      profile.streakFreezesUsed = (profile.streakFreezesUsed ?? 0) + freezesUsed;
+    }
     profile.lastActivityDate = today;
     profile.lastReviewDate = today;
     profile.totalReviews += 1;
@@ -196,6 +208,8 @@ export async function awardXP(user, event, payload, now = new Date()) {
     ...achievementExtras,
   });
   profile.totalXP += achievementXP;
+  // Weekly leaderboard includes review/quiz XP, bonuses, and achievement XP.
+  addWeeklyXP(profile, boostedAward + achievementXP, now);
 
   // §11.2 final level after every XP source landed.
   const { level, xpToNextLevel: toNext } = computeLevel(profile.totalXP);
@@ -203,6 +217,9 @@ export async function awardXP(user, event, payload, now = new Date()) {
   profile.xpToNextLevel = toNext;
   profile.longestStreak = Math.max(profile.longestStreak, profile.currentStreak);
   await profile.save();
+  if (freezesUsed > 0) {
+    await consumeFreezeInventory(user._id, freezesUsed).catch(() => {});
+  }
 
   const streakMilestone = crossedMilestone(previousStreak, profile.currentStreak);
 
@@ -244,6 +261,9 @@ export async function refundReviewXP(user, xpAwarded, gami, extra = {}) {
   profile.totalXP = totalXP;
   profile.dailyXPProgress = Math.max(0, profile.dailyXPProgress - xpAwarded);
   profile.coins = Math.max(0, profile.coins - questCoins);
+  // Undo only reverses the weekly bucket when the original award belongs to
+  // the current week; a cross-week undo must not touch the new week.
+  subtractWeeklyXP(profile, xpAwarded + questXp, gami?.weeklyXPWeek, new Date());
   profile.currentLevel = level;
   profile.xpToNextLevel = toNext;
   if (gami) {

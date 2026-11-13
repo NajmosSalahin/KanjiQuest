@@ -23,3 +23,5 @@ services:
         sync: false
       - key: CLIENT_ORIGIN
         sync: false
+      - key: STORAGE_DRIVER
+        value: mongo

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { Types } from 'mongoose';
 import { LEVEL_TITLES, STORE } from '@kanjigarden/shared';
 import { User } from '../models/User.js';
@@ -15,6 +16,8 @@ import {
 } from '../services/achievements.js';
 import { displayStreak, nextMilestone, repairStatus, applyRepair } from '../services/streak.js';
 import { computeLevel } from '../services/xp.js';
+import { addWeeklyXP } from '../services/weekly.js';
+import { equipItem, purchaseItem } from '../services/store.js';
 import { localDay, addDays } from '../services/time.js';
 import { ok, fail } from '../utils/envelope.js';
 
@@ -156,6 +159,7 @@ gamificationRouter.post('/streak/repair', async (req, res, next) => {
       repairCount: 1,
     });
     profile.totalXP += achievementXP;
+    addWeeklyXP(profile, achievementXP, now);
     const { level, xpToNextLevel } = computeLevel(profile.totalXP);
     profile.currentLevel = level;
     profile.xpToNextLevel = xpToNextLevel;
@@ -172,6 +176,41 @@ gamificationRouter.post('/streak/repair', async (req, res, next) => {
       xpToNextLevel,
       newlyUnlocked: newly,
     });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// POST /api/v1/gamification/store/purchase — buy one catalogue item (§6.11).
+gamificationRouter.post('/store/purchase', async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({ itemId: z.string().min(1).max(40) })
+      .strict()
+      .safeParse(req.body);
+    if (!parsed.success) {
+      return fail(res, 400, 'VALIDATION_ERROR', 'Choose an item from the store.');
+    }
+    return ok(res, await purchaseItem(req.userId, parsed.data.itemId));
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// POST /api/v1/gamification/store/equip — equip a title/frame or unequip (null).
+gamificationRouter.post('/store/equip', async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({
+        slot: z.enum(['title', 'frame']),
+        itemId: z.string().min(1).max(40).nullable(),
+      })
+      .strict()
+      .safeParse(req.body);
+    if (!parsed.success) {
+      return fail(res, 400, 'VALIDATION_ERROR', 'Choose an item to equip.');
+    }
+    return ok(res, await equipItem(req.userId, parsed.data.slot, parsed.data.itemId));
   } catch (err) {
     return next(err);
   }

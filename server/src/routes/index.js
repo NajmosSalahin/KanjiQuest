@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { healthRouter } from './health.routes.js';
 import { authRouter } from './auth.routes.js';
 import { usersRouter } from './users.routes.js';
+import { assetsRouter } from './assets.routes.js';
 import { kanjiRouter } from './kanji.routes.js';
 import { radicalsRouter } from './radicals.routes.js';
 import { licensesRouter } from './licenses.routes.js';
@@ -10,6 +11,8 @@ import { gamificationRouter } from './gamification.routes.js';
 import { questRouter } from './quests.routes.js';
 import { quizRouter } from './quiz.routes.js';
 import { statsRouter } from './stats.routes.js';
+import { storeRouter } from './store.routes.js';
+import { leaderboardRouter } from './leaderboard.routes.js';
 import { requireAuth } from '../middleware/auth.js';
 
 export const apiRouter = Router();
@@ -26,5 +29,8 @@ apiRouter.use('/gamification', requireAuth, gamificationRouter); // Phase 4
 apiRouter.use('/quests', requireAuth, questRouter); // Phase 5
 apiRouter.use('/quiz', requireAuth, quizRouter); // Phase 6
 apiRouter.use('/stats', requireAuth, statsRouter); // Phase 5
+apiRouter.use('/store', requireAuth, storeRouter); // Phase 7
+apiRouter.use('/leaderboard', requireAuth, leaderboardRouter); // Phase 7
+apiRouter.use('/assets', assetsRouter); // Phase 7 avatar bytes (public URL)
 
-// Phase 7+ mounts: store, leaderboard (prompt.md §9).
+// Phase 7+ mounts: none left.
