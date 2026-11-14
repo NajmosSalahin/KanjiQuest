@@ -1,5 +1,6 @@
 /**
- * Live smoke test - run after every phase's deploy (74 checks).
+ * Live smoke test - run after every phase's deploy (73-74 checks; the
+ * coin-purchase branch only runs when the throwaway account has coins).
  *
  *   node deploy/smoke.mjs                       # defaults to https://kanjiquest.vercel.app
  *   node deploy/smoke.mjs https://my-app.vercel.app

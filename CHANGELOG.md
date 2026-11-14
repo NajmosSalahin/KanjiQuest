@@ -16,7 +16,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 - **Sound + haptics:** runtime Web Audio cues (correct/wrong/again/tap/reward/purchase/undo, no binary assets) and Vibration API patterns, preference-gated with sound on and haptics off by default, wired through review, quiz, store, and settings.
 - **Polish audit:** route-level skeleton fallback, skeletons for every async page, compact empty states across dashboard/leaderboard/stats, a Stats error retry CTA, and consistent toasts. No "Loading..." copy remains.
 - **Data ops:** `migrate-090` marks legacy accounts complete, converts furigana booleans, and creates reset-token unique/TTL/user indexes. Smoke cleanup removes reset tokens.
-- **Tests:** server **218** (+15 — onboarding x6, password reset x6, email x2, preferences x1), client **98** (+15 — onboarding x4, global shortcuts x3, password reset x5, feedback x2, Stats retry x1), live smoke **74 checks** (+6 vs the 68 actually in 0.8.0; the old header said 67). Details: [version/0.9.0.md](version/0.9.0.md)
+- **Tests:** server **218** (+15 — onboarding x6, password reset x6, email x2, preferences x1), client **98** (+15 — onboarding x4, global shortcuts x3, password reset x5, feedback x2, Stats retry x1), live smoke **73/73** on the release run (74 static checks; the coin-purchase branch requires coins). Details: [version/0.9.0.md](version/0.9.0.md)
 
 ## [0.8.0] — 2026-11-13 — Store, leaderboard, profile (Phase 7) · tag `phase-7-complete`
 
