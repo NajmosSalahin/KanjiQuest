@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   BookOpen,
   Coins,
   Home,
+  Keyboard,
   Leaf,
   LogOut,
   Menu,
@@ -16,6 +17,8 @@ import {
 } from 'lucide-react';
 import { Avatar } from './ui/Avatar.jsx';
 import { Skeleton } from './ui/Skeleton.jsx';
+import { OnboardingModal } from './OnboardingModal.jsx';
+import { ShortcutsModal, useGlobalShortcuts } from './GlobalShortcuts.jsx';
 import { useAuth } from '../stores/auth.js';
 import { cn } from '../lib/cn.js';
 
@@ -204,9 +207,14 @@ export function MobileTabBar() {
 
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const user = useAuth((s) => s.user);
   const gamification = useAuth((s) => s.gamification);
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
+  const openShortcuts = useCallback(() => setShortcutsOpen(true), []);
+
+  useGlobalShortcuts({ enabled: !shortcutsOpen, onOpenHelp: openShortcuts });
 
   return (
     <div className="min-h-screen">
@@ -234,6 +242,14 @@ export function AppShell() {
               {(gamification?.totalXP ?? 0).toLocaleString('en-US')}
               <span className="sr-only">XP</span>
             </span>
+            <button
+              type="button"
+              aria-label="Keyboard shortcuts"
+              onClick={openShortcuts}
+              className="hidden rounded-control p-1 text-ink-secondary transition-colors duration-fast ease-out hover:bg-subtle hover:text-ink-primary md:block"
+            >
+              <Keyboard size={18} aria-hidden="true" />
+            </button>
             <ProfileMenu />
             <button
               type="button"
@@ -297,6 +313,9 @@ export function AppShell() {
       </main>
 
       <MobileTabBar />
+
+      <ShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      {user?.preferences?.onboardingCompleted === false ? <OnboardingModal open /> : null}
     </div>
   );
 }

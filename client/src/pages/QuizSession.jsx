@@ -11,6 +11,7 @@ import { Modal } from '../components/ui/Modal.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { MobileTabBar } from '../components/AppShell.jsx';
 import { CelebrationModal, titleChanged } from '../components/CelebrationModal.jsx';
+import { feedback } from '../lib/feedback.js';
 import { unlockToastMessage } from '../lib/gamification.js';
 import { QUIZ_MODE_INFO } from '../components/quiz/QuizIcons.jsx';
 import { ChoiceQuestion } from '../components/quiz/ChoiceQuestion.jsx';
@@ -192,6 +193,7 @@ export default function QuizSession() {
     setSummary(data);
     setEmptySprint(false);
     setPhase('summary');
+    feedback('reward');
     reportResult(data);
   }
 
@@ -337,6 +339,8 @@ export default function QuizSession() {
 
       if (data.session.mode === 'sprint') {
         handleSprintTiming(data.session);
+        const positive = data.timeDeltaMs > 0;
+        feedback(positive ? 'correct' : 'wrong');
         setCorrectOptionId(data.correctOptionId ?? null);
         setSprintFlash(data.timeDeltaMs > 0 ? 'correct' : 'wrong');
         clearTimeout(flashTimerRef.current);
@@ -350,6 +354,7 @@ export default function QuizSession() {
       }
 
       setCorrectOptionId(data.correctOptionId ?? null);
+      feedback(data.correctOptionId === option.id ? 'correct' : 'wrong');
       scheduleAdvance(data.nextQuestion, PRACTICE_FEEDBACK_MS, finalizePractice);
     } catch (err) {
       handleAnswerError(err);
@@ -379,7 +384,9 @@ export default function QuizSession() {
 
       if (data.tapCorrect) {
         setTaps((current) => [...current, strokeId]);
+        if (!data.complete) feedback('tap');
       } else {
+        feedback('wrong');
         setWrongStrokeId(strokeId);
         clearTimeout(wrongTimerRef.current);
         wrongTimerRef.current = setTimeout(() => setWrongStrokeId(null), 220);
@@ -393,6 +400,7 @@ export default function QuizSession() {
         }
         setStrokeComplete(true);
         setStrokeOutcome(!!data.correct);
+        feedback(data.correct ? 'correct' : 'wrong');
         setSprintFlash(data.timeDeltaMs > 0 ? 'correct' : 'wrong');
         clearTimeout(flashTimerRef.current);
         flashTimerRef.current = setTimeout(() => setSprintFlash(null), 400);
@@ -410,6 +418,7 @@ export default function QuizSession() {
       }
       setStrokeComplete(true);
       setStrokeOutcome(!!data.correct);
+      feedback(data.correct ? 'correct' : 'wrong');
       scheduleAdvance(data.nextQuestion, PRACTICE_FEEDBACK_MS, finalizePractice);
     } catch (err) {
       handleAnswerError(err);
@@ -428,6 +437,7 @@ export default function QuizSession() {
       setSession(data.session);
       setDrawingResult(data);
       if (data.complete) {
+        feedback(data.correct ? 'correct' : 'wrong');
         advanceRef.current = () => {
           advanceTimerRef.current = null;
           advanceRef.current = null;

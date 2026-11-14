@@ -1,5 +1,5 @@
 /**
- * Live smoke test - run after every phase's deploy (67 checks).
+ * Live smoke test - run after every phase's deploy (74 checks).
  *
  *   node deploy/smoke.mjs                       # defaults to https://kanjiquest.vercel.app
  *   node deploy/smoke.mjs https://my-app.vercel.app
@@ -18,13 +18,14 @@
  * submit, D13 daily-XP accounting, sprint clock + active-submit guard), Phase 7
  * store (catalogue, inventory, purchase/equip validation), leaderboards
  * (weekly + all-time + sticky row), auto-saving profile preferences, and
- * avatar upload/serve/delete through the D17 storage adapter,
- * logout, SPA fallback, security headers.
+ * avatar upload/serve/delete through the D17 storage adapter, Phase 8
+ * onboarding preload/pace/idempotent retry, generic forgot-password and
+ * invalid reset tokens, logout, SPA fallback, security headers.
  *
  * Registers a throwaway `smoke+<epoch>@example.com` user; when a root `.env`
  * with MONGODB_URI is found (local runs), it deletes that user + sessions +
- * profile + progress afterwards so prod stays clean. Exit code 0 only if all
- * checks pass.
+ * profile + progress + reset tokens afterwards so prod stays clean. Exit code
+ * 0 only if all checks pass.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -828,6 +829,79 @@ let storeSnapshot = null;
   }
 }
 
+// 22l. Phase 8 (D20): onboarding preload, pace cap, and idempotent retry
+{
+  const onboard = await call('/api/v1/users/me/onboarding', {
+    method: 'POST',
+    body: { level: 4, dailyReviewLimit: 40, reminderTime: '20:00', reminderEnabled: true },
+  });
+  const user = onboard.json?.data?.user;
+  check(
+    'onboarding -> level 4 preload, 40/day, reminders on',
+    onboard.status === 200 &&
+      user?.jlptLevel === 4 &&
+      user?.preferences?.onboardingCompleted === true &&
+      user?.preferences?.dailyReviewLimit === 40 &&
+      user?.preferences?.reminderTime === '20:00' &&
+      (onboard.json?.data?.preloadedCount ?? 0) > 100,
+    `status=${onboard.status} preloaded=${onboard.json?.data?.preloadedCount}`
+  );
+
+  const due = await call('/api/v1/progress/due');
+  check(
+    'onboarding preload -> due queue capped by daily limit',
+    due.status === 200 &&
+      due.json?.data?.items?.length === 40 &&
+      (due.json?.data?.total ?? 0) >= 100,
+    `items=${due.json?.data?.items?.length} total=${due.json?.data?.total}`
+  );
+
+  const retry = await call('/api/v1/users/me/onboarding', {
+    method: 'POST',
+    body: { level: 3, dailyReviewLimit: 10 },
+  });
+  check(
+    'onboarding retry -> idempotent, unchanged level',
+    retry.status === 200 &&
+      retry.json?.data?.alreadyCompleted === true &&
+      retry.json?.data?.preloadedCount === 0 &&
+      retry.json?.data?.user?.jlptLevel === 4 &&
+      retry.json?.data?.user?.preferences?.dailyReviewLimit === 40,
+    `alreadyCompleted=${retry.json?.data?.alreadyCompleted} preloaded=${retry.json?.data?.preloadedCount}`
+  );
+}
+
+// 22m. Phase 8 (D21): generic forgot-password + invalid reset token
+{
+  const known = await call('/api/v1/auth/forgot-password', {
+    method: 'POST',
+    body: { email: EMAIL },
+  });
+  const unknown = await call('/api/v1/auth/forgot-password', {
+    method: 'POST',
+    body: { email: `nobody+${Date.now()}@example.com` },
+  });
+  const message = known.json?.data?.message;
+  check(
+    'forgot-password -> same generic message (no enumeration)',
+    known.status === 200 &&
+      unknown.status === 200 &&
+      Boolean(message) &&
+      unknown.json?.data?.message === message,
+    `known=${known.status} unknown=${unknown.status}`
+  );
+
+  const reset = await call('/api/v1/auth/reset-password', {
+    method: 'POST',
+    body: { token: 'not-a-real-reset-token', password: 'SmokeReset!12345' },
+  });
+  check(
+    'reset-password -> invalid token rejected',
+    reset.status === 400 && reset.json?.error?.code === 'INVALID_RESET_TOKEN',
+    `status=${reset.status} code=${reset.json?.error?.code}`
+  );
+}
+
 // 23. logout invalidates
 {
   const r = await call('/api/v1/auth/logout', { method: 'POST' });
@@ -882,6 +956,16 @@ let storeSnapshot = null;
     res.status === 200 && /<!doctype html>/i.test(html) && html.includes('<div id="root"'),
     `status=${res.status}`
   );
+
+  const resetPage = await fetch(BASE + '/reset-password?token=smoke');
+  const resetHtml = await resetPage.text();
+  check(
+    'SPA fallback /reset-password serves app',
+    resetPage.status === 200 &&
+      /<!doctype html>/i.test(resetHtml) &&
+      resetHtml.includes('<div id="root"'),
+    `status=${resetPage.status}`
+  );
 }
 
 // 26. security headers on static responses
@@ -933,6 +1017,7 @@ try {
         await db.collection('userquests').deleteMany({ userId: { $in: ids } });
         await db.collection('userinventories').deleteMany({ userId: { $in: ids } });
         await db.collection('avatarassets').deleteMany({ userId: { $in: ids } });
+        await db.collection('passwordresettokens').deleteMany({ userId: { $in: ids } });
         await db.collection('users').deleteMany({ _id: { $in: ids } });
         console.log(`cleanup: removed smoke user ${EMAIL}`);
       }

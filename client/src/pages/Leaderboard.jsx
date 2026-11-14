@@ -51,8 +51,14 @@ function BoardTable({ board, period }) {
           <tbody>
             {entries.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-12 text-center text-sm text-ink-muted">
-                  No one has earned {period === 'weekly' ? 'XP this week' : 'XP'} yet. Be the first.
+                <td colSpan={4} className="px-4 py-10">
+                  <EmptyState
+                    compact
+                    className="border-0 bg-transparent p-0 shadow-none"
+                    headline={`No one has earned ${period === 'weekly' ? 'XP this week' : 'XP'} yet`}
+                    description="A review or quiz is enough to claim the first rank."
+                    action={{ label: 'Start reviewing', to: '/review' }}
+                  />
                 </td>
               </tr>
             ) : (

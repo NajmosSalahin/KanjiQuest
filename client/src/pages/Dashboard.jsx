@@ -481,9 +481,13 @@ export default function Dashboard() {
             const showMe = me && !entries.some((entry) => entry.isYou);
             if (entries.length === 0 && !showMe) {
               return (
-                <p className="mt-4 text-sm text-ink-muted">
-                  No one has earned XP this week yet. Be the first.
-                </p>
+                <EmptyState
+                  compact
+                  className="mt-4"
+                  headline="No one has earned XP this week"
+                  description="The board resets Monday at 00:00 UTC. One review puts you on it."
+                  action={{ label: 'Start reviewing', to: '/review' }}
+                />
               );
             }
             const rows = showMe ? [...entries, me] : entries;

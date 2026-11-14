@@ -6,6 +6,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-11-14 — Onboarding, settings, polish (Phase 8) · tag `phase-8-complete`
+
+- **Three-step onboarding (D20 / §6.1):** new accounts choose JLPT level, daily pace, and reminder time in a non-dismissible modal with a skip path. `POST /users/me/onboarding` is idempotent, marks the account complete, and preloads the chosen level (N5 for skip/"Not sure") into `UserProgress` as `state:new`, due now — N5 79, N4 166, N3 367. Preload runs before the completed flag so a failed write stays retryable; legacy documents without the flag are treated as complete.
+- **Full password reset (D21 / §6.13):** generic `POST /auth/forgot-password`, single-use hashed 30-minute tokens, `POST /auth/reset-password` with session revocation, `PasswordResetToken` TTL indexes, and `/forgot-password` + `/reset-password` screens covering missing, invalid, expired, weak, and success states.
+- **Brevo email adapter:** production sends through Brevo's HTTPS API using built-in `fetch`; development/test logs to the console. `render.yaml` declares `EMAIL_PROVIDER=brevo`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, and a dashboard-only `BREVO_API_KEY`.
+- **Complete §6.13 settings:** three-state furigana (**always / on hover / never**, with true→always and false→never migration) plus the existing theme, goal, review limit, sound, haptics, reminders, JLPT, timezone, avatar, title, and account controls. Auto-save and the saved toast remain.
+- **Global shortcuts (§6.16):** `?` opens a grouped shortcut reference; `/` focuses Learn search via `/learn?focus=search`; `g d/l/r/s/p` navigate Dashboard, Learn, Review, Stats, and Profile. Global handling ignores typing targets, modifier chords, open dialogs, and session screens.
+- **Sound + haptics:** runtime Web Audio cues (correct/wrong/again/tap/reward/purchase/undo, no binary assets) and Vibration API patterns, preference-gated with sound on and haptics off by default, wired through review, quiz, store, and settings.
+- **Polish audit:** route-level skeleton fallback, skeletons for every async page, compact empty states across dashboard/leaderboard/stats, a Stats error retry CTA, and consistent toasts. No "Loading..." copy remains.
+- **Data ops:** `migrate-090` marks legacy accounts complete, converts furigana booleans, and creates reset-token unique/TTL/user indexes. Smoke cleanup removes reset tokens.
+- **Tests:** server **218** (+15 — onboarding x6, password reset x6, email x2, preferences x1), client **98** (+15 — onboarding x4, global shortcuts x3, password reset x5, feedback x2, Stats retry x1), live smoke **74 checks** (+6 vs the 68 actually in 0.8.0; the old header said 67). Details: [version/0.9.0.md](version/0.9.0.md)
+
 ## [0.8.0] — 2026-11-13 — Store, leaderboard, profile (Phase 7) · tag `phase-7-complete`
 
 - **Store (§6.11 / §7.10):** eight server-priced items — Streak freeze (50, max 2), XP boost (100, 1.5×/24h), titles The Diligent 25 / Kokoro no Tsuchi 50 / Yama no Ue 75, frames Sakura / Take / Tsuki 100. `GET /store/items` returns live `owned`/`equipped`/`active`/cap/affordability state; `GET /store/inventory` lists owned items; `/store` renders the catalogue with badges, balance, confirmation modal, equip/unequip, and insufficient-funds hints.

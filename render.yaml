@@ -25,3 +25,13 @@ services:
         sync: false
       - key: STORAGE_DRIVER
         value: mongo
+      # D21: password-reset email via Brevo's HTTPS API. The API key is set in
+      # the dashboard (sync: false) and never committed.
+      - key: EMAIL_PROVIDER
+        value: brevo
+      - key: EMAIL_FROM
+        value: najmussalahin.adib@gmail.com
+      - key: EMAIL_FROM_NAME
+        value: Kanji Garden
+      - key: BREVO_API_KEY
+        sync: false

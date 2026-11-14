@@ -16,6 +16,23 @@ export const registerSchema = z.object({
   displayName: z.string().trim().min(1, 'Display name is required.'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Enter a valid email address.'),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters and include a number.')
+      .regex(/\d/, 'Password must be at least 8 characters and include a number.'),
+    confirmPassword: z.string().min(1, 'Confirm your new password.'),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: 'Passwords do not match.',
+    path: ['confirmPassword'],
+  });
+
 /** Register screen strength indicator: 0–3 (length, number, extra length). */
 export function passwordStrength(password) {
   if (!password) return 0;

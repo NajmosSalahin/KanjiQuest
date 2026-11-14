@@ -154,9 +154,10 @@ function EmptyGardenBedSvg({ size = 180 }) {
 }
 
 export default function Learn() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchInput, setSearchInput] = useState('');
   const [q, setQ] = useState('');
+  const searchRef = useRef(null);
   // Deep link (§7.1 empty state): /learn?jlpt=5 opens the N5 tab.
   const [tab, setTab] = useState(() => {
     const jlpt = searchParams.get('jlpt');
@@ -166,6 +167,15 @@ export default function Learn() {
   const [sort, setSort] = useState('frequency');
   const [status, setStatus] = useState('all');
   const columns = useColumns();
+
+  // §6.16 `/` lands here with ?focus=search; focus once, then clean the URL.
+  useEffect(() => {
+    if (searchParams.get('focus') !== 'search') return;
+    searchRef.current?.focus();
+    const next = new URLSearchParams(searchParams);
+    next.delete('focus');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Debounced server search — 250ms (§7.3), queries the server, not an array.
   useEffect(() => {
@@ -225,6 +235,7 @@ export default function Learn() {
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted"
           />
           <input
+            ref={searchRef}
             type="search"
             aria-label="Search kanji, meaning, or reading"
             placeholder="Search kanji, meaning, or reading"

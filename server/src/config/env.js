@@ -20,6 +20,13 @@ const schema = z
     LOG_LEVEL: z.string().default('info'),
     /** D17: avatar storage driver. Unset = local in dev/test, Mongo in prod. */
     STORAGE_DRIVER: z.enum(['local', 'mongo']).optional(),
+    /** D21: password-reset delivery. `console` logs in dev/test; `brevo`
+     *  posts to Brevo's HTTPS API. Missing production config degrades to a
+     *  logged warning instead of crashing the API. */
+    EMAIL_PROVIDER: z.enum(['console', 'brevo']).default('console'),
+    BREVO_API_KEY: z.string().default(''),
+    EMAIL_FROM: z.string().default(''),
+    EMAIL_FROM_NAME: z.string().default('Kanji Garden'),
   })
   .superRefine((env, ctx) => {
     if (!isProduction) return;

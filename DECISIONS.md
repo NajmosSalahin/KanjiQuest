@@ -291,9 +291,29 @@ The store catalogue is fixed at **8 items**: Streak freeze **50** coins (max **2
 
 There is **no materialized `leaderboard` cache collection**. Each read aggregates `GamificationProfile` directly: weekly (`weeklyXPWeek` = current week, `weeklyXP > 0`) or all-time (`totalXP > 0`), **XP descending**, **competition rank for ties** (equal XP shares the best rank), and display order breaks ties by profile `createdAt` then `_id` for deterministic output. The response carries the top **100** entries plus a **sticky current-user row** (`me`); a user outside the top 100 gets a rank from the count of higher-XP profiles, and zero-XP users are excluded from top entries (their `me.rank` is `null`). This trades a little read cost for exact, drift-free ranks without cache invalidation.
 
+## Implementation notes (Phase 8 — Onboarding, settings, polish)
+
+### D20: onboarding gate, starter preload, and legacy fallback (owner-approved)
+
+New accounts see the three-step modal because registration writes `preferences.onboardingCompleted: false` **explicitly**. The schema has **no default** for this field, so legacy documents without it stay `undefined` and `publicUser` normalizes them to `true`; `migrate-090` also backfills every existing account. This avoids showing onboarding to the existing user base.
+
+`POST /api/v1/users/me/onboarding` is idempotent. The first call:
+
+- validates `level` (N5/N4/N3, optional), `dailyReviewLimit` (1–200, optional), and reminder fields;
+- bulk-upserts every kanji in the chosen level (N5 for "Not sure"/skip) as `state:new`, `dueDate: now`, with the standard initial SRS values;
+- then saves `jlptLevel`, `dailyReviewLimit`, reminder fields, and `onboardingCompleted: true`.
+
+The preload runs **before** the completed flag, so a failed bulk write leaves the account retryable. Skip uses N5, **20 reviews/day**, and reminders off. A second call returns `alreadyCompleted: true` with `preloadedCount: 0` and does not change the chosen level or pace.
+
+### D21: password reset via hashed single-use tokens + Brevo (owner-approved)
+
+`POST /api/v1/auth/forgot-password` always returns the same generic message. For a known email it invalidates any previous reset token, creates a random 32-byte token, stores **only its SHA-256 hash** in `PasswordResetToken` with a **30-minute** expiry, and emails the raw token in a `/reset-password?token=...` link. `POST /api/v1/auth/reset-password` validates the token, updates the bcrypt hash, deletes the token (single use), and deletes **every session** for that user. Tokens carry a Mongo TTL index plus a unique hash index and a user index; `migrate-090` creates them.
+
+Delivery uses an adapter (`server/src/services/email.js`): `EMAIL_PROVIDER=brevo` posts to `https://api.brevo.com/v3/smtp/email` with the built-in `fetch` (no new dependency and no SDK), while `console` logs the link in development/test. Missing Brevo config or a provider error is logged and returns `{ delivered: false }`; the HTTP response stays generic and non-enumerating. `render.yaml` declares `EMAIL_PROVIDER=brevo`, `EMAIL_FROM=najmussalahin.adib@gmail.com`, `EMAIL_FROM_NAME=Kanji Garden`, and `BREVO_API_KEY` with `sync: false`. The sender must be verified in Brevo before live mail is delivered, and the API key belongs only in the Render dashboard.
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.
 2. ~~**Milestone names**~~ — resolved Phase 4: bar labels are **Wakaba 14 · Sakura 30 · Hanami 60 · Momiji 100**; the 7/30/100 achievements keep **Kokoro/Tsuki/Kaze**.
 3. **Quest titles** — §6.7 lists 12 phrases (e.g. "Review 10 cards"); are they the titles themselves, or do you want separate title + description copy? _Current Phase 5 build uses the phrases as titles with a clarifying description; wording confirmation still open._
-4. **Password reset** — §7.11 shows a "Forgot password?" link but §9 has no reset endpoints. In scope (Phase 8 polish?) or drop the link?
+4. ~~**Password reset**~~ — resolved Phase 8 as **D21**: full request/reset flow with hashed single-use 30-minute tokens and Brevo delivery; the §7.11 link now targets `/forgot-password`.

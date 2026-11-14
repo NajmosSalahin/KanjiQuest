@@ -1,12 +1,15 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast.jsx';
+import { Skeleton } from './components/ui/Skeleton.jsx';
 import { AppShell } from './components/AppShell.jsx';
 import { RequireAuth, RedirectIfAuthed } from './components/guards.jsx';
 import { useAuth } from './stores/auth.js';
 import { applyTheme, watchSystemTheme } from './lib/theme.js';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
+import ResetPassword from './pages/ResetPassword.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 
 const KitchenSink = lazy(() => import('./pages/KitchenSink.jsx'));
@@ -22,6 +25,19 @@ const Leaderboard = lazy(() => import('./pages/Leaderboard.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
 
 const isDev = import.meta.env.DEV;
+
+/** Route-level lazy fallback (§2.12) — mirrors the page skeleton rhythm. */
+function RouteFallback() {
+  return (
+    <main id="main" className="mx-auto w-full max-w-app px-4 pb-24 pt-6 md:px-6 md:py-8 lg:px-8">
+      <div className="space-y-4">
+        <Skeleton className="h-9 w-40" />
+        <Skeleton className="h-48 rounded-card" />
+        <Skeleton className="h-64 rounded-card" />
+      </div>
+    </main>
+  );
+}
 
 export default function App() {
   const themePreference = useAuth((state) => state.user?.preferences?.theme ?? 'auto');
@@ -41,7 +57,7 @@ export default function App() {
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <Suspense fallback={null}>
+        <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route
               path="/login"
@@ -59,6 +75,8 @@ export default function App() {
                 </RedirectIfAuthed>
               }
             />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               element={
                 <RequireAuth>

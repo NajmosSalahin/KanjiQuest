@@ -14,6 +14,7 @@ import {
 import { api } from '../lib/api.js';
 import { cn } from '../lib/cn.js';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
+import { EmptyState } from '../components/ui/EmptyState.jsx';
 
 /** Statistics — prompt.md §7.7 / §9. */
 
@@ -373,8 +374,12 @@ export default function Stats() {
   if (query.isLoading) return <StatsSkeleton />;
   if (query.isError) {
     return (
-      <div className="mx-auto w-full max-w-[960px] rounded-card border border-line-subtle bg-surface p-6">
-        <p className="text-sm text-ink-secondary">Statistics could not be loaded.</p>
+      <div className="mx-auto w-full max-w-[960px]">
+        <EmptyState
+          headline="Statistics could not be loaded."
+          description="We couldn't reach your review history. Check your connection and try again."
+          action={{ label: 'Retry', onClick: () => query.refetch() }}
+        />
       </div>
     );
   }
@@ -389,6 +394,21 @@ export default function Stats() {
   const best = bestWorst?.best ?? [];
   const worst = bestWorst?.worst ?? [];
   const accuracyAverage = accuracy.rate;
+  const hasReviews = heatmap.some((day) => (day.reviews ?? 0) > 0);
+
+  if (!hasReviews) {
+    return (
+      <div className="mx-auto w-full max-w-[960px]">
+        <h1 className="font-display text-3xl font-semibold text-ink-primary">Statistics</h1>
+        <EmptyState
+          className="mt-4"
+          headline="Your first review starts the story"
+          description="Finish one review session and this page begins charting your heatmap, accuracy, and forecast."
+          action={{ label: 'Start reviewing', to: '/review' }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-[960px] flex-col gap-4">

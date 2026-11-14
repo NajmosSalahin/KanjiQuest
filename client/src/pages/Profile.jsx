@@ -50,6 +50,12 @@ const THEME_OPTIONS = [
   { value: 'dark', label: 'Dark' },
 ];
 
+const FURIGANA_OPTIONS = [
+  { value: 'always', label: 'Always show' },
+  { value: 'hover', label: 'On hover or focus' },
+  { value: 'never', label: 'Never' },
+];
+
 const GOAL_OPTIONS = DAILY_GOAL_OPTIONS.map((value) => ({
   value: String(value),
   label: `${value} XP / day`,
@@ -618,10 +624,18 @@ export default function Profile() {
               label="Furigana readings"
               description="Show hiragana above kanji during reviews."
             >
-              <Toggle
-                checked={user.preferences?.furigana ?? true}
-                onChange={(checked) => updatePreference({ furigana: checked })}
+              <Select
                 label="Furigana readings"
+                name="furigana"
+                value={
+                  user.preferences?.furigana === true
+                    ? 'always'
+                    : user.preferences?.furigana === false
+                      ? 'never'
+                      : (user.preferences?.furigana ?? 'always')
+                }
+                options={FURIGANA_OPTIONS}
+                onChange={(event) => updatePreference({ furigana: event.target.value })}
               />
             </SettingRow>
           </SettingsSection>

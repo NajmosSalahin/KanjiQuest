@@ -6,6 +6,7 @@ import { RATING, RATING_LABELS } from '@kanjigarden/shared';
 import { api } from '../lib/api.js';
 import { cn } from '../lib/cn.js';
 import { speakJa } from '../lib/speech.js';
+import { feedback } from '../lib/feedback.js';
 import { useAuth } from '../stores/auth.js';
 import { useToast } from '../components/ui/Toast.jsx';
 import { Button } from '../components/ui/Button.jsx';
@@ -190,7 +191,13 @@ export default function Review() {
   const queryClient = useQueryClient();
   const { push } = useToast();
   const mergeGamification = useAuth((s) => s.mergeGamification);
-  const furiganaOn = useAuth((s) => s.user?.preferences?.furigana ?? true);
+  const furiganaPreference = useAuth((s) => s.user?.preferences?.furigana ?? 'always');
+  const furiganaMode =
+    furiganaPreference === true
+      ? 'always'
+      : furiganaPreference === false
+        ? 'never'
+        : furiganaPreference;
   const navStreak = useAuth((s) => s.gamification?.currentStreak ?? 0);
 
   const [session, setSession] = useState(undefined); // undefined = first load
@@ -249,6 +256,7 @@ export default function Review() {
       queryClient.invalidateQueries({ queryKey: ['progress', 'stats'] });
       setSession(entry.snapshot); // compensating restore (§6.5)
       setRevealed(false);
+      feedback('undo');
     } catch (err) {
       push({ message: err.message, tone: 'info' });
     }
@@ -275,6 +283,10 @@ export default function Review() {
       setPressed(null);
       setSubmitting(false);
       if (!result) return; // card stays put for a retry
+
+      if (rating >= 2) feedback('correct');
+      else if (rating === 1) feedback('tap');
+      else feedback('again');
 
       mergeGamification({
         totalXP: result.xp.totalXP,
@@ -315,6 +327,7 @@ export default function Review() {
       queryClient.invalidateQueries({ queryKey: ['stats'] });
       queryClient.invalidateQueries({ queryKey: ['progress', 'stats'] });
       if (result.xp.leveledUp || result.xp.streakMilestone) {
+        feedback('reward');
         setCelebration({
           kind: celebrationKind,
           level: result.xp.level,
@@ -552,7 +565,7 @@ export default function Review() {
             revealed={revealed}
             pressed={pressed}
             submitting={submitting}
-            furiganaOn={furiganaOn}
+            furiganaOn={furiganaMode}
             onReveal={() => setRevealed(true)}
             onRate={rate}
           />
@@ -784,13 +797,21 @@ function CardStage({ card, revealed, pressed, submitting, furiganaOn, onReveal, 
             className="flex min-h-32 items-center justify-center text-center text-ink-primary"
             data-testid="review-kanji"
           >
-            {furiganaOn && reading ? (
+            {furiganaOn !== 'never' && reading ? (
               <ruby
-                className="font-jp-serif"
+                className={cn('font-jp-serif', furiganaOn === 'hover' && 'group')}
+                tabIndex={furiganaOn === 'hover' ? 0 : undefined}
                 style={{ fontSize: 'var(--text-kanji-xl)', lineHeight: 1, fontWeight: 400 }}
               >
                 {card.character}
-                <rt className="font-jp text-ink-muted" style={{ fontSize: '0.3em' }}>
+                <rt
+                  className={cn(
+                    'font-jp text-ink-muted transition-opacity duration-fast ease-out',
+                    furiganaOn === 'hover' &&
+                      'opacity-0 group-hover:opacity-100 group-focus:opacity-100'
+                  )}
+                  style={{ fontSize: '0.3em' }}
+                >
                   {reading}
                 </rt>
               </ruby>

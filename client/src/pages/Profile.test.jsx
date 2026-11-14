@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -282,7 +282,9 @@ describe('Profile (§7.8)', () => {
     await user.click(await screen.findByRole('button', { name: 'Delete account' }));
     const dialog = await screen.findByRole('dialog');
     const confirm = within(dialog).getByLabelText('Type "Rina Kobayashi" to confirm');
-    await user.type(confirm, 'Rina Kobayashi');
+    // One change event keeps this heavy settings page under the suite timeout;
+    // the behaviour under test is the exact-match gate, not per-key typing.
+    fireEvent.change(confirm, { target: { value: 'Rina Kobayashi' } });
     await user.click(within(dialog).getByRole('button', { name: 'Delete account' }));
 
     await waitFor(() =>

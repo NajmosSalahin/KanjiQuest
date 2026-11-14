@@ -65,6 +65,42 @@ describe('profile and account settings (§6.13)', () => {
     expect(invalid.body.error.code).toBe('VALIDATION_ERROR');
   });
 
+  it('persists §6.13 preferences and rejects legacy boolean furigana', async () => {
+    const { jar } = await signUp();
+    const res = await request(app)
+      .patch('/api/v1/users/me/preferences')
+      .set(csrf)
+      .set('Cookie', jar)
+      .send({
+        theme: 'dark',
+        furigana: 'hover',
+        soundEnabled: false,
+        hapticsEnabled: true,
+        dailyReviewLimit: 40,
+        reminderEnabled: true,
+        reminderTime: '19:30',
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.data.preferences).toMatchObject({
+      theme: 'dark',
+      furigana: 'hover',
+      soundEnabled: false,
+      hapticsEnabled: true,
+      dailyReviewLimit: 40,
+      reminderEnabled: true,
+      reminderTime: '19:30',
+    });
+
+    const legacy = await request(app)
+      .patch('/api/v1/users/me/preferences')
+      .set(csrf)
+      .set('Cookie', jar)
+      .send({ furigana: true });
+    expect(legacy.status).toBe(400);
+    expect(legacy.body.error.code).toBe('VALIDATION_ERROR');
+    expect(legacy.body.error.fields.furigana).toBeDefined();
+  });
+
   it('uploads, replaces, serves, and removes an avatar', async () => {
     const { jar } = await signUp();
     const uploaded = await request(app)

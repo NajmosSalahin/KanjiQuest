@@ -9,7 +9,18 @@ A gamified spaced-repetition kanji learning app covering all 13,108 KANJIDIC2 ka
 Build phases (see `prompt.md` §17):
 
 - [x] Phase 0 — Foundation (git flow, docs, scaffold, design tokens, `/kitchen-sink`)
-- [ ] Phases 1–10 — Auth, kanji data, SRS, gamification, quests/stats, quizzes, store/leaderboard/profile, onboarding/polish, PWA/a11y/perf, deployment
+- [x] Phase 1 — Auth + shell
+- [x] Phase 2 — Kanji data + seeded Atlas catalogue
+- [x] Phase 3 — SRS review system
+- [x] Phase 4 — Gamification core
+- [x] Phase 5 — Daily quests + statistics
+- [x] Phase 6 — Quiz modes
+- [x] Phase 7 — Store, leaderboard, profile
+- [x] Phase 8 — Onboarding, settings, polish
+- [ ] Phase 9 — PWA, accessibility, performance
+- [ ] Phase 10 — Deployment + release polish
+
+Live: client <https://kanjiquest.vercel.app> · API <https://kanjiquest-api.onrender.com>. Each phase ships a `version/X.Y.Z.md` note from v0.1.0 through v0.9.0.
 
 ## Requirements
 
@@ -65,6 +76,6 @@ shared/   constants + JSDoc typedefs used by both
 ## Docs
 
 - `prompt.md` — fixed product spec (source of truth)
-- `IMPLEMENTATION_PLAN.md` — plan, decisions D1–D5, phase acceptance criteria
+- `IMPLEMENTATION_PLAN.md` - plan, approved decisions D1-D21, phase acceptance criteria
 - `DECISIONS.md` — architecture decision log
 - `CONTRIBUTING.md` — branching, commits, phase protocol

@@ -16,11 +16,16 @@ const userSchema = new Schema(
       dailyGoalXP: { type: Number, enum: [...DAILY_GOAL_OPTIONS], default: DEFAULT_DAILY_GOAL_XP },
       dailyReviewLimit: { type: Number, default: 20 },
       theme: { type: String, enum: ['auto', 'light', 'dark'], default: 'auto' },
-      furigana: { type: Boolean, default: true },
+      // §6.13: always / on hover / never. migrate-090 converts old booleans.
+      furigana: { type: String, enum: ['always', 'hover', 'never'], default: 'always' },
       soundEnabled: { type: Boolean, default: true },
       hapticsEnabled: { type: Boolean, default: false },
       reminderTime: { type: String, default: null },
       reminderEnabled: { type: Boolean, default: false },
+      // D20: new accounts see the 3-step onboarding modal. No schema default:
+      // legacy documents stay `undefined` so publicUser treats them as complete
+      // without waiting for the migration. Registration sets `false` explicitly.
+      onboardingCompleted: { type: Boolean },
     },
     lastActiveAt: { type: Date, default: null },
   },
@@ -31,6 +36,9 @@ export const User = model('User', userSchema);
 
 /** Safe projection for API responses — never leaks passwordHash. */
 export function publicUser(user) {
+  const preferences = user.preferences?.toObject
+    ? user.preferences.toObject()
+    : { ...user.preferences };
   return {
     id: String(user._id),
     email: user.email,
@@ -39,7 +47,12 @@ export function publicUser(user) {
     nativeLanguage: user.nativeLanguage,
     jlptLevel: user.jlptLevel,
     timezone: user.timezone,
-    preferences: user.preferences,
+    preferences: {
+      ...preferences,
+      // D20 legacy fallback: accounts created before Phase 8 (no field)
+      // are already using the app and must not be interrupted by onboarding.
+      onboardingCompleted: preferences.onboardingCompleted !== false,
+    },
     createdAt: user.createdAt,
   };
 }

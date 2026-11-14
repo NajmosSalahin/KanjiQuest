@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Button } from './Button.jsx';
 import { cn } from '../../lib/cn.js';
 
@@ -42,20 +43,52 @@ function SeedSproutSvg({ size = 200, className }) {
   );
 }
 
-export function EmptyState({ svg, headline, description, action, className, svgSize = 200 }) {
+export function EmptyState({
+  svg,
+  headline,
+  description,
+  action,
+  className,
+  svgSize,
+  compact = false,
+}) {
+  const resolvedSvgSize = svgSize ?? (compact ? 96 : 200);
   return (
     <div
       className={cn(
-        'flex flex-col items-center gap-4 rounded-card border border-line-subtle bg-surface p-10 text-center shadow-sm',
+        'flex flex-col items-center rounded-card border border-line-subtle bg-surface text-center shadow-sm',
+        compact ? 'gap-3 p-5' : 'gap-4 p-10',
         className
       )}
     >
-      {svg ?? <SeedSproutSvg size={svgSize} />}
-      <h2 className="font-display text-2xl font-medium text-ink-primary">{headline}</h2>
+      {svg ?? <SeedSproutSvg size={resolvedSvgSize} />}
+      <h2
+        className={cn(
+          'font-display font-medium text-ink-primary',
+          compact ? 'text-base' : 'text-2xl'
+        )}
+      >
+        {headline}
+      </h2>
       {description ? (
-        <p className="max-w-[400px] text-sm text-ink-secondary">{description}</p>
+        <p
+          className={cn('text-sm text-ink-secondary', compact ? 'max-w-[340px]' : 'max-w-[400px]')}
+        >
+          {description}
+        </p>
       ) : null}
-      {action ? <Button onClick={action.onClick}>{action.label}</Button> : null}
+      {action ? (
+        action.to ? (
+          <Link
+            to={action.to}
+            className="inline-flex items-center justify-center gap-2 rounded-control bg-vermillion px-4 py-2 text-sm font-medium text-white transition-colors duration-fast ease-out hover:bg-vermillion-hover"
+          >
+            {action.label}
+          </Link>
+        ) : (
+          <Button onClick={action.onClick}>{action.label}</Button>
+        )
+      ) : null}
     </div>
   );
 }

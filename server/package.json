@@ -1,6 +1,6 @@
 {
   "name": "@kanjigarden/server",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,6 +15,7 @@
     "migrate-060": "node src/scripts/migrate-060.js",
     "migrate-070": "node src/scripts/migrate-070.js",
     "migrate-080": "node src/scripts/migrate-080.js",
+    "migrate-090": "node src/scripts/migrate-090.js",
     "seed-quests": "node src/scripts/seed-quests.js"
   },
   "dependencies": {

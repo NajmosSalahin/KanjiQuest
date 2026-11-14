@@ -4,7 +4,10 @@ import multer from 'multer';
 import { DAILY_GOAL_OPTIONS } from '@kanjigarden/shared';
 import { User, publicUser } from '../models/User.js';
 import { Session } from '../models/Session.js';
+import { PasswordResetToken } from '../models/PasswordResetToken.js';
+import { Kanji } from '../models/Kanji.js';
 import { UserProgress } from '../models/UserProgress.js';
+import { EASE } from '../services/srs.js';
 import {
   GamificationProfile,
   ensureGamificationProfile,
@@ -29,7 +32,7 @@ const preferencesSchema = z
     dailyGoalXP: z.union(DAILY_GOAL_OPTIONS.map((v) => z.literal(v))).optional(),
     dailyReviewLimit: z.number().int().min(1).max(200).optional(),
     theme: z.enum(['auto', 'light', 'dark']).optional(),
-    furigana: z.boolean().optional(),
+    furigana: z.enum(['always', 'hover', 'never']).optional(),
     soundEnabled: z.boolean().optional(),
     hapticsEnabled: z.boolean().optional(),
     reminderTime: z
@@ -62,6 +65,24 @@ const profileSchema = z
         }
       }, 'Choose a valid timezone.')
       .optional(),
+  })
+  .strict();
+
+/** D20: the 3-step modal sends one payload on finish or skip. */
+const onboardingSchema = z
+  .object({
+    level: z
+      .union([z.literal(5), z.literal(4), z.literal(3)])
+      .nullable()
+      .optional(),
+    dailyReviewLimit: z.union([z.literal(10), z.literal(20), z.literal(40)]).optional(),
+    reminderTime: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use a 24-hour time like 19:30.')
+      .nullable()
+      .optional(),
+    reminderEnabled: z.boolean().optional(),
+    skipped: z.boolean().optional(),
   })
   .strict();
 
@@ -137,6 +158,83 @@ usersRouter.patch('/me/preferences', requireAuth, async (req, res, next) => {
       await profile.save();
     }
     return ok(res, { preferences: user.preferences });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// POST /api/v1/users/me/onboarding — D20. Idempotent: finishing or skipping
+// marks the account complete and bulk-preloads the chosen JLPT level (skip =
+// N5) as `state:new`, due now. The daily limit caps each review session.
+usersRouter.post('/me/onboarding', requireAuth, async (req, res, next) => {
+  try {
+    const parsed = onboardingSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return fail(
+        res,
+        400,
+        'VALIDATION_ERROR',
+        'Check the highlighted fields.',
+        zodFields(parsed.error)
+      );
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) return fail(res, 401, 'TOKEN_INVALID', 'Your session expired. Sign in again.');
+
+    // Legacy/missing field = complete; only an explicit `false` shows the modal.
+    if (user.preferences.onboardingCompleted !== false) {
+      if (user.preferences.onboardingCompleted === undefined) {
+        user.preferences.onboardingCompleted = true;
+        await user.save();
+      }
+      return ok(res, { user: publicUser(user), preloadedCount: 0, alreadyCompleted: true });
+    }
+
+    const level = parsed.data.level ?? 5;
+    const dailyReviewLimit = parsed.data.dailyReviewLimit ?? 20;
+    const reminderTime = parsed.data.reminderTime ?? null;
+    const reminderEnabled = reminderTime ? (parsed.data.reminderEnabled ?? true) : false;
+
+    // Preload first, then mark complete: a failed bulk write leaves the modal
+    // retryable instead of locking the account out of its starter deck.
+    const kanji = await Kanji.find({ jlptLevel: level }).select('_id').sort({ frequencyRank: 1 });
+    const dueDate = new Date();
+    let preloadedCount = 0;
+    if (kanji.length > 0) {
+      const result = await UserProgress.bulkWrite(
+        kanji.map((entry) => ({
+          updateOne: {
+            filter: { userId: user._id, kanjiId: entry._id },
+            update: {
+              $setOnInsert: {
+                state: 'new',
+                dueDate,
+                interval: 0,
+                easeFactor: EASE.START,
+                repetitions: 0,
+                lapses: 0,
+                lastReviewedAt: null,
+                history: [],
+                suspendedUntil: null,
+              },
+            },
+            upsert: true,
+          },
+        })),
+        { ordered: false }
+      );
+      preloadedCount = result.upsertedCount;
+    }
+
+    user.jlptLevel = level;
+    user.preferences.dailyReviewLimit = dailyReviewLimit;
+    user.preferences.reminderTime = reminderTime;
+    user.preferences.reminderEnabled = reminderEnabled;
+    user.preferences.onboardingCompleted = true;
+    await user.save();
+
+    return ok(res, { user: publicUser(user), preloadedCount, alreadyCompleted: false });
   } catch (err) {
     return next(err);
   }
@@ -223,6 +321,7 @@ usersRouter.delete('/me', requireAuth, async (req, res, next) => {
     await deleteAvatar(user._id, user.avatarUrl);
     await Promise.all([
       Session.deleteMany({ userId: user._id }),
+      PasswordResetToken.deleteMany({ userId: user._id }),
       UserProgress.deleteMany({ userId: user._id }),
       GamificationProfile.deleteOne({ userId: user._id }),
       UserQuest.deleteMany({ userId: user._id }),

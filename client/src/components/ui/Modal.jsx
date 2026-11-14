@@ -7,7 +7,16 @@ import { cn } from '../../lib/cn.js';
  * no glassmorphism (§2.2). `container` lets themed wrappers (kitchen sink)
  * keep the dialog inside their scope.
  */
-export function Modal({ open, onOpenChange, title, description, children, footer, container }) {
+export function Modal({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+  footer,
+  container,
+  hideClose = false,
+}) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal container={container}>
@@ -22,12 +31,14 @@ export function Modal({ open, onOpenChange, title, description, children, footer
             <Dialog.Title className="font-display text-xl font-semibold text-ink-primary">
               {title}
             </Dialog.Title>
-            <Dialog.Close
-              className="rounded-control p-1 text-ink-muted transition-colors duration-fast ease-out hover:bg-subtle hover:text-ink-primary"
-              aria-label="Close"
-            >
-              <X size={16} aria-hidden="true" />
-            </Dialog.Close>
+            {hideClose ? null : (
+              <Dialog.Close
+                className="rounded-control p-1 text-ink-muted transition-colors duration-fast ease-out hover:bg-subtle hover:text-ink-primary"
+                aria-label="Close"
+              >
+                <X size={16} aria-hidden="true" />
+              </Dialog.Close>
+            )}
           </div>
           {description ? (
             <Dialog.Description className="mt-2 text-sm text-ink-secondary">

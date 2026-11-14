@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Coins, Snowflake, Sparkles, Zap } from 'lucide-react';
 import { api } from '../lib/api.js';
 import { cn } from '../lib/cn.js';
+import { feedback } from '../lib/feedback.js';
 import { useAuth } from '../stores/auth.js';
 import { useToast } from '../components/ui/Toast.jsx';
 import { Button } from '../components/ui/Button.jsx';
@@ -130,6 +131,7 @@ export default function Store() {
       });
       queryClient.invalidateQueries({ queryKey: ['store'] });
       queryClient.invalidateQueries({ queryKey: ['gamification', 'profile'] });
+      feedback('purchase');
       toast({ message: `Purchased ${data.item.name}.`, tone: 'success' });
       setPending(null);
       setError('');

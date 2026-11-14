@@ -50,13 +50,13 @@ const ONE_PAGE = {
   hasMore: false,
 };
 
-function renderLearn() {
+function renderLearn(initialEntries = ['/learn']) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={initialEntries}>
         <Learn />
       </MemoryRouter>
     </QueryClientProvider>
@@ -92,6 +92,13 @@ describe('Learn browser (§7.3)', () => {
     expect([...status.options].map((o) => o.label)).toEqual(['All', 'Learning', 'Mastered']);
     // Radical pills: character + count + accessible title
     expect(await screen.findByTitle('water radical — 12 kanji')).toBeDefined();
+  });
+
+  it('uses the search deep link to focus the search field (§6.16)', async () => {
+    mockApi();
+    renderLearn(['/learn?focus=search']);
+    const input = await screen.findByLabelText('Search kanji, meaning, or reading');
+    await waitFor(() => expect(document.activeElement).toBe(input));
   });
 
   it('shows the exact no-results empty state with Clear filters', async () => {
