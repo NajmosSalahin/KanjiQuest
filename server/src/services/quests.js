@@ -25,7 +25,7 @@ export const QUEST_DEFS = Object.freeze([
   {
     id: 'review-10',
     title: 'Review 10 cards',
-    description: 'Complete 10 review cards today.',
+    description: 'Finish ten review cards today.',
     phase: 5,
     type: 'review',
     target: 10,
@@ -36,7 +36,7 @@ export const QUEST_DEFS = Object.freeze([
   {
     id: 'review-20',
     title: 'Review 20 cards',
-    description: 'Complete 20 review cards today.',
+    description: 'Finish twenty review cards today.',
     phase: 5,
     type: 'review',
     target: 20,
@@ -46,8 +46,8 @@ export const QUEST_DEFS = Object.freeze([
   },
   {
     id: 'correct-5',
-    title: 'Five in a row',
-    description: 'Get 5 answers correct in a row.',
+    title: 'Get 5 answers correct in a row',
+    description: 'Rate five cards correctly without a miss.',
     phase: 5,
     type: 'review',
     target: 5,
@@ -57,8 +57,8 @@ export const QUEST_DEFS = Object.freeze([
   },
   {
     id: 'quiz-session',
-    title: 'A quiz session',
-    description: 'Complete 1 quiz session.',
+    title: 'Complete 1 quiz session',
+    description: 'Finish any quiz from the practice hub.',
     phase: 6,
     type: 'quiz',
     target: 1,
@@ -68,8 +68,8 @@ export const QUEST_DEFS = Object.freeze([
   },
   {
     id: 'quiz-perfect',
-    title: 'Perfect quiz',
-    description: 'Get a 100% accuracy quiz session.',
+    title: 'Get a 100% accuracy quiz session',
+    description: 'Finish a quiz with every answer correct.',
     phase: 6,
     type: 'quiz',
     target: 1,
@@ -80,7 +80,7 @@ export const QUEST_DEFS = Object.freeze([
   {
     id: 'earn-100xp',
     title: 'Earn 100 XP',
-    description: 'Earn 100 XP today.',
+    description: 'Reach 100 XP today from any source.',
     phase: 5,
     type: 'review',
     target: 100,
@@ -91,7 +91,7 @@ export const QUEST_DEFS = Object.freeze([
   {
     id: 'learn-3',
     title: 'Learn 3 new kanji',
-    description: 'Review 3 kanji for the first time today.',
+    description: 'Review three kanji for the first time today.',
     phase: 5,
     type: 'review',
     target: 3,
@@ -101,8 +101,8 @@ export const QUEST_DEFS = Object.freeze([
   },
   {
     id: 'clear-due',
-    title: 'Clear the queue',
-    description: 'Clear all due reviews.',
+    title: 'Clear all due reviews',
+    description: 'Finish every card that is due today.',
     phase: 5,
     type: 'review',
     target: 1,
@@ -112,8 +112,8 @@ export const QUEST_DEFS = Object.freeze([
   },
   {
     id: 'drawing-quiz',
-    title: 'Drawing practice',
-    description: 'Complete a drawing-canvas quiz.',
+    title: 'Complete a drawing-canvas quiz',
+    description: 'Draw the kanji and finish the quiz.',
     phase: 6,
     type: 'quiz',
     target: 1,
@@ -123,8 +123,8 @@ export const QUEST_DEFS = Object.freeze([
   },
   {
     id: 'stroke-quiz',
-    title: 'Stroke practice',
-    description: 'Complete a stroke-order quiz.',
+    title: 'Complete a stroke-order quiz',
+    description: 'Tap every stroke in order and finish the quiz.',
     phase: 6,
     type: 'quiz',
     target: 1,
@@ -134,8 +134,8 @@ export const QUEST_DEFS = Object.freeze([
   },
   {
     id: 'before-10',
-    title: 'Early bird',
-    description: 'Review before 10am.',
+    title: 'Review before 10am',
+    description: 'Review at least one card before 10am.',
     phase: 5,
     type: 'review',
     target: 1,
@@ -145,8 +145,8 @@ export const QUEST_DEFS = Object.freeze([
   },
   {
     id: 'after-20',
-    title: 'Night owl',
-    description: 'Review after 8pm.',
+    title: 'Review after 8pm',
+    description: 'Review at least one card after 8pm.',
     phase: 5,
     type: 'review',
     target: 1,

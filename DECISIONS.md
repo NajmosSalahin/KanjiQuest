@@ -229,7 +229,7 @@ The owner approved the Phase 5 implementation direction ("go"). The details:
 
 ### Quest titles use the §6.7 phrases; descriptions are the clarifying line
 
-The 12 §6.7 phrases are the quest **titles** verbatim, with a one-line description added for the dashboard card. This is the current shipped copy; open question #3 remains for owner confirmation of the wording, and changing it is a data-only edit to `QUEST_DEFS`.
+The 12 §6.7 phrases are the quest **titles** verbatim (owner confirmed 2026-11-14), with a one-line description added for the dashboard card. Descriptions add detail without repeating the title; changing the copy is a data-only edit to `QUEST_DEFS`.
 
 ### Live preview after every phase (2026-10-22, owner request)
 
@@ -311,9 +311,17 @@ The preload runs **before** the completed flag, so a failed bulk write leaves th
 
 Delivery uses an adapter (`server/src/services/email.js`): `EMAIL_PROVIDER=brevo` posts to `https://api.brevo.com/v3/smtp/email` with the built-in `fetch` (no new dependency and no SDK), while `console` logs the link in development/test. Missing Brevo config or a provider error is logged and returns `{ delivered: false }`; the HTTP response stays generic and non-enumerating. `render.yaml` declares `EMAIL_PROVIDER=brevo`, `EMAIL_FROM=najmussalahin.adib@gmail.com`, `EMAIL_FROM_NAME=Kanji Garden`, and `BREVO_API_KEY` with `sync: false`. The sender must be verified in Brevo before live mail is delivered, and the API key belongs only in the Render dashboard.
 
+### D22: `vite-plugin-pwa` for the Phase 9 service worker (owner-approved)
+
+§6.14 names `vite-plugin-pwa` for shell caching, but §3.8's approved library list does not include it. The owner approved adding **`vite-plugin-pwa` plus its Workbox transitive packages** as a client **dev dependency** on 2026-11-14. The plugin generates the manifest/service worker at build time; no new dependency is added to the application source bundle.
+
+### Phase 9 reminder delivery stays storage-only (owner decision, 2026-11-14)
+
+`reminderTime` and `reminderEnabled` remain preference fields only. Phase 9 will not add Web Push, notification permissions, or server-side scheduling. Revisit only with a new owner decision.
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.
 2. ~~**Milestone names**~~ — resolved Phase 4: bar labels are **Wakaba 14 · Sakura 30 · Hanami 60 · Momiji 100**; the 7/30/100 achievements keep **Kokoro/Tsuki/Kaze**.
-3. **Quest titles** — §6.7 lists 12 phrases (e.g. "Review 10 cards"); are they the titles themselves, or do you want separate title + description copy? _Current Phase 5 build uses the phrases as titles with a clarifying description; wording confirmation still open._
+3. ~~**Quest titles**~~ — resolved 2026-11-14: the 12 §6.7 phrases are the titles verbatim; descriptions were rewritten to add detail without duplicating the title. Data-only seed change (`QUEST_DEFS` + `seed-quests`).
 4. ~~**Password reset**~~ — resolved Phase 8 as **D21**: full request/reset flow with hashed single-use 30-minute tokens and Brevo delivery; the §7.11 link now targets `/forgot-password`.

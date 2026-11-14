@@ -77,7 +77,7 @@ const QUESTS = {
     {
       id: 'review-10',
       title: 'Review 10 cards',
-      description: 'Complete 10 review cards today.',
+      description: 'Finish ten review cards today.',
       progress: 4,
       target: 10,
       completed: false,
@@ -89,7 +89,7 @@ const QUESTS = {
     {
       id: 'learn-3',
       title: 'Learn 3 new kanji',
-      description: 'Review 3 kanji for the first time today.',
+      description: 'Review three kanji for the first time today.',
       progress: 3,
       target: 3,
       completed: true,
@@ -100,8 +100,8 @@ const QUESTS = {
     },
     {
       id: 'before-10',
-      title: 'Early bird',
-      description: 'Review before 10am.',
+      title: 'Review before 10am',
+      description: 'Review at least one card before 10am.',
       progress: 0,
       target: 1,
       completed: false,

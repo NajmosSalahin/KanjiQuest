@@ -6,6 +6,9 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 
 ## [Unreleased]
 
+- **Quest copy (open question #3 closed):** the 12 §6.7 phrases now ship as quest titles verbatim; descriptions were rewritten to add detail without repeating the title. Data-only change to `QUEST_DEFS`; rerun `npm run seed-quests -w server` against the live DB.
+- **Phase 9 approvals:** `vite-plugin-pwa` + Workbox approved as a client dev dependency (D22); reminder preferences remain storage-only (no push notifications).
+
 ## [0.9.0] — 2026-11-14 — Onboarding, settings, polish (Phase 8) · tag `phase-8-complete`
 
 - **Three-step onboarding (D20 / §6.1):** new accounts choose JLPT level, daily pace, and reminder time in a non-dismissible modal with a skip path. `POST /users/me/onboarding` is idempotent, marks the account complete, and preloads the chosen level (N5 for skip/"Not sure") into `UserProgress` as `state:new`, due now — N5 79, N4 166, N3 367. Preload runs before the completed flag so a failed write stays retryable; legacy documents without the flag are treated as complete.

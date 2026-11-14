@@ -105,6 +105,7 @@ Recorded here so `DECISIONS.md` and the phase reviews stay honest. Every entry i
 | D19 | §6.12 / §7.9 | Leaderboards are computed **live** (no cache collection): weekly or all-time, XP descending, **competition rank** for ties, display tie-break by profile `createdAt` then `_id`, top **100** + sticky `me` row (rank = higher-XP count), zero-XP users excluded from top entries. | Owner approved the Phase 7 plan. Exact ranks without cache-invalidation drift; top-100 + sticky row matches the screen. |
 | D20 | §6.1 / §7.1 / §9 | Onboarding is gated by `preferences.onboardingCompleted`: registration writes **explicit `false`**, the schema has **no default** so legacy documents stay `undefined` and are treated as complete, and `migrate-090` backfills existing accounts. Add **`POST /users/me/onboarding`** (idempotent): finish/skip marks complete and bulk-preloads the chosen level (N5 for "Not sure"/skip) as `state:new`, due now; skip also uses 20 reviews/day and reminders off. Preload runs before the flag so failure stays retryable. | Owner approved the Phase 8 plan. §9 defines no onboarding/preload endpoint, and the legacy-default choice prevents showing onboarding to the existing user base. |
 | D21 | §6.13 / §7.11 / §9 | Add **`POST /auth/forgot-password`** (generic response for known/unknown) and **`POST /auth/reset-password`**: random 32-byte token, **SHA-256 hash only** in `PasswordResetToken`, **30-minute** expiry, single use, every session revoked on success. Delivery via a Brevo HTTPS API adapter (`fetch`, no SDK) with a console dev/test driver; failures stay non-enumerating. Brevo sender must be verified; `BREVO_API_KEY` is dashboard-only. | Owner approved the Phase 8 plan. §7.11 links to password reset but §9 has no endpoints; §6.13 lists settings including password. |
+| D22 | §6.14 / §3.8 | Add **`vite-plugin-pwa`** with its Workbox transitive packages as a client **dev dependency** for the Phase 9 manifest/service worker. | Owner approved 2026-11-14; §6.14 names the plugin but §3.8 does not list it. |
 
 No other deviations are authorized. Any new deviation requires owner approval before implementation and must be appended to this table and `DECISIONS.md`.
 
@@ -561,6 +562,7 @@ Each phase ends with: working code, all tests green, clean `git status`, a `phas
 
 **Tasks:** manifest (192/512/maskable, vermillion theme, canvas bg, standalone) · vite-plugin-pwa shell caching · IndexedDB offline review queue + sync-on-reconnect · "Offline — reviews will sync when you reconnect" banner · WCAG audit vs §12 (focus rings, labels, live regions, contrast both themes) · Lighthouse vs budgets · A11Y.md results.
 **Acceptance:** installable PWA; offline review queues and syncs; Lighthouse mobile ≥90/95/95/90; main chunk <200KB gzipped; screen-reader pass documented.
+**Reminder scope:** `reminderTime` / `reminderEnabled` stay **storage-only** in Phase 9; no Web Push, notification permission, or server scheduling (owner decision, 2026-11-14).
 
 ### Phase 10 — Deployment + docs
 
