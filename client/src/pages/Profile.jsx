@@ -15,6 +15,7 @@ import { DAILY_GOAL_OPTIONS, storeItem } from '@kanjigarden/shared';
 import { api, apiUpload } from '../lib/api.js';
 import { cn } from '../lib/cn.js';
 import { applyTheme } from '../lib/theme.js';
+import { clearReviews } from '../lib/offlineQueue.js';
 import { useAuth } from '../stores/auth.js';
 import { AchievementIcon } from '../components/AchievementIcon.jsx';
 import { Avatar } from '../components/ui/Avatar.jsx';
@@ -297,6 +298,8 @@ export default function Profile() {
   const deleteMutation = useMutation({
     mutationFn: (confirmName) => api('/users/me', { method: 'DELETE', body: { confirmName } }),
     onSuccess: () => {
+      // D24: queued ratings belong to the deleted account and must not linger.
+      clearReviews(user.id).catch(() => {});
       useAuth.setState({ status: 'guest', user: null, gamification: null });
       navigate('/login', { replace: true });
     },

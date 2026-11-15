@@ -1,5 +1,5 @@
 /**
- * Live smoke test - run after every phase's deploy (73-74 checks; the
+ * Live smoke test - run after every phase's deploy (78-79 checks; the
  * coin-purchase branch only runs when the throwaway account has coins).
  *
  *   node deploy/smoke.mjs                       # defaults to https://kanjiquest.vercel.app
@@ -21,7 +21,9 @@
  * (weekly + all-time + sticky row), auto-saving profile preferences, and
  * avatar upload/serve/delete through the D17 storage adapter, Phase 8
  * onboarding preload/pace/idempotent retry, generic forgot-password and
- * invalid reset tokens, logout, SPA fallback, security headers.
+ * invalid reset tokens, D24 offline reviewedAt + eventId idempotency, PWA
+ * manifest/icons/service worker/head tags, logout, SPA fallback, security
+ * headers.
  *
  * Registers a throwaway `smoke+<epoch>@example.com` user; when a root `.env`
  * with MONGODB_URI is found (local runs), it deletes that user + sessions +
@@ -337,6 +339,28 @@ let registerSetCookies = [];
     'suspend -> suspended 7d and excluded from due',
     s.status === 200 && s.json?.data?.progress?.suspended === true && !stillDue,
     `status=${s.status}`
+  );
+}
+
+// 19b. Phase 9 (D24): reviewedAt + eventId idempotency
+{
+  const due = await call('/api/v1/progress/due');
+  const card = due.json?.data?.items?.[0];
+  const reviewedAt = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const eventId = `smoke-offline-${Date.now()}`;
+  const body = { cardId: card.id, rating: 2, eventId, reviewedAt };
+  const first = await call('/api/v1/progress/review', { method: 'POST', body });
+  const replay = await call('/api/v1/progress/review', { method: 'POST', body });
+  check(
+    'offline review -> reviewedAt stored + replay is idempotent (D24)',
+    first.status === 200 &&
+      first.json?.data?.reviewedAt === reviewedAt &&
+      typeof first.json?.data?.timestampAdjusted === 'boolean' &&
+      replay.status === 200 &&
+      replay.json?.data?.duplicate === true &&
+      replay.json?.data?.xp?.awarded === 0 &&
+      replay.json?.data?.xp?.totalXP === first.json?.data?.xp?.totalXP,
+    `first=${first.status} replay=${replay.status} duplicate=${replay.json?.data?.duplicate}`
   );
 }
 
@@ -969,6 +993,57 @@ let storeSnapshot = null;
   );
 }
 
+// 25b. Phase 9: PWA manifest, icons, service worker, and head tags
+{
+  const manifestRes = await fetch(BASE + '/manifest.json');
+  let manifest = null;
+  try {
+    manifest = await manifestRes.json();
+  } catch {}
+  const icons = manifest?.icons ?? [];
+  const sizes = icons.map((icon) => icon.sizes);
+  check(
+    'PWA manifest -> standalone + 192/512 + maskable + theme',
+    manifestRes.status === 200 &&
+      manifest?.display === 'standalone' &&
+      sizes.includes('192x192') &&
+      sizes.includes('512x512') &&
+      icons.some((icon) => /maskable/.test(icon.purpose ?? '')) &&
+      /^#/.test(manifest?.theme_color ?? ''),
+    `status=${manifestRes.status} icons=${icons.length}`
+  );
+
+  const icon192 = await fetch(BASE + '/icons/icon-192.png');
+  const icon512 = await fetch(BASE + '/icons/icon-512.png');
+  check(
+    'PWA icons -> 192/512 PNG served',
+    icon192.status === 200 &&
+      icon512.status === 200 &&
+      /image\/png/.test(icon192.headers.get('content-type') ?? '') &&
+      /image\/png/.test(icon512.headers.get('content-type') ?? ''),
+    `192=${icon192.status} 512=${icon512.status}`
+  );
+
+  const sw = await fetch(BASE + '/sw.js');
+  const swText = await sw.text();
+  check(
+    'service worker -> generated Workbox precache + offline fallback',
+    sw.status === 200 && /workbox/i.test(swText) && /precache/i.test(swText),
+    `status=${sw.status} bytes=${swText.length}`
+  );
+
+  const home = await fetch(BASE + '/');
+  const html = await home.text();
+  check(
+    'PWA head -> manifest + theme-color + apple touch icon',
+    home.status === 200 &&
+      /rel="manifest"/i.test(html) &&
+      /name="theme-color"/i.test(html) &&
+      /rel="apple-touch-icon"/i.test(html),
+    `status=${home.status}`
+  );
+}
+
 // 26. security headers on static responses
 {
   const res = await fetch(BASE + '/');
@@ -1019,6 +1094,7 @@ try {
         await db.collection('userinventories').deleteMany({ userId: { $in: ids } });
         await db.collection('avatarassets').deleteMany({ userId: { $in: ids } });
         await db.collection('passwordresettokens').deleteMany({ userId: { $in: ids } });
+        await db.collection('reviewevents').deleteMany({ userId: { $in: ids } });
         await db.collection('users').deleteMany({ _id: { $in: ids } });
         console.log(`cleanup: removed smoke user ${EMAIL}`);
       }

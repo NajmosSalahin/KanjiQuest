@@ -6,12 +6,12 @@ import { AppShell } from './components/AppShell.jsx';
 import { RequireAuth, RedirectIfAuthed } from './components/guards.jsx';
 import { useAuth } from './stores/auth.js';
 import { applyTheme, watchSystemTheme } from './lib/theme.js';
-import Login from './pages/Login.jsx';
-import Register from './pages/Register.jsx';
-import ForgotPassword from './pages/ForgotPassword.jsx';
-import ResetPassword from './pages/ResetPassword.jsx';
-import Dashboard from './pages/Dashboard.jsx';
 
+const Login = lazy(() => import('./pages/Login.jsx'));
+const Register = lazy(() => import('./pages/Register.jsx'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword.jsx'));
+const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
 const KitchenSink = lazy(() => import('./pages/KitchenSink.jsx'));
 const Learn = lazy(() => import('./pages/Learn.jsx'));
 const KanjiDetail = lazy(() => import('./pages/KanjiDetail.jsx'));

@@ -35,7 +35,7 @@
   /* Furigana (§4): small, muted, above kanji */
   ruby rt {
     font-size: 0.5em;
-    color: var(--ink-muted);
+    color: var(--text-muted);
     font-family: 'Noto Sans JP', sans-serif;
     font-weight: 400;
     letter-spacing: 0.02em;
@@ -81,7 +81,7 @@
   .stroke-svg text {
     font-family: 'Geist Mono', ui-monospace, monospace;
     font-size: 8px;
-    fill: var(--ink-muted);
+    fill: var(--text-muted);
   }
 
   /* Quiz stroke taps (§7.6): correct taps fill vermillion over 400ms, a wrong

@@ -24,6 +24,13 @@
   --danger-crimson: #b33a3a;
   --focus-ring: #c1432e;
 
+  /* Accessible text variants (§12): the §3 palette values above stay fixed,
+     but small text needs 4.5:1 on canvas/surface/subtle. These derived tones
+     are used by text-* utilities only; icons, borders and fills keep §3. */
+  --text-muted: #645e52; /* 5.5:1 on canvas, 5.0:1 on subtle */
+  --text-matcha: #435331; /* 7.9:1 on canvas */
+  --text-persimmon: #8d5123; /* 5.9:1 on canvas */
+
   /* spacing is the Tailwind scale (§3.3) — see tailwind.config.js */
 
   /* shadows (§3.5) — only these three exist */
@@ -62,4 +69,9 @@
   --warning-persimmon: #e8944a;
   --danger-crimson: #d95a5a;
   --focus-ring: #e05a3f;
+
+  /* Dark text already clears 4.5:1 on the dark surfaces. */
+  --text-muted: var(--ink-muted);
+  --text-matcha: var(--success-matcha);
+  --text-persimmon: var(--warning-persimmon);
 }

@@ -3,17 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle2, CircleHelp, Volume2 } from 'lucide-react';
 import { RATING, RATING_LABELS } from '@kanjigarden/shared';
-import { api } from '../lib/api.js';
+import { api, ApiError } from '../lib/api.js';
 import { cn } from '../lib/cn.js';
 import { speakJa } from '../lib/speech.js';
 import { feedback } from '../lib/feedback.js';
 import { useAuth } from '../stores/auth.js';
+import { useOffline } from '../stores/offline.js';
 import { useToast } from '../components/ui/Toast.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { MobileTabBar } from '../components/AppShell.jsx';
+import { OfflineBanner, useOfflineSync } from '../components/OfflineStatus.jsx';
 import { CelebrationModal, titleChanged } from '../components/CelebrationModal.jsx';
 import { MILESTONE_ACHIEVEMENT, unlockToastMessage } from '../lib/gamification.js';
+import {
+  enqueueReview,
+  listReviews,
+  newEventId,
+  pendingCount,
+  removeReview,
+} from '../lib/offlineQueue.js';
+import { flushOfflineReviews, syncSummary } from '../lib/offlineSync.js';
 
 /** Review session — prompt.md §7.2 (full-screen, distraction-free).
  *  Global top nav is replaced by a minimal bar (back · counter · ?); mobile
@@ -36,20 +46,23 @@ const RATING_BUTTONS = [
     key: '1',
     rest: 'border-crimson text-crimson hover:bg-crimson hover:text-white',
     fill: 'border-crimson bg-crimson text-white',
+    fillKey: 'text-white',
   },
   {
     value: RATING.HARD,
     label: RATING_LABELS[RATING.HARD],
     key: '2',
-    rest: 'border-persimmon text-persimmon hover:bg-persimmon hover:text-white',
-    fill: 'border-persimmon bg-persimmon text-white',
+    rest: 'border-persimmon text-persimmon hover:bg-persimmon hover:text-ink-primary',
+    fill: 'border-persimmon bg-persimmon text-ink-primary',
+    fillKey: 'text-ink-primary/80',
   },
   {
     value: RATING.GOOD,
     label: RATING_LABELS[RATING.GOOD],
     key: '3',
-    rest: 'border-matcha text-matcha hover:bg-matcha hover:text-white',
-    fill: 'border-matcha bg-matcha text-white',
+    rest: 'border-matcha text-matcha hover:bg-matcha hover:text-ink-primary',
+    fill: 'border-matcha bg-matcha text-ink-primary',
+    fillKey: 'text-ink-primary/80',
   },
   {
     value: RATING.EASY,
@@ -57,6 +70,7 @@ const RATING_BUTTONS = [
     key: '4',
     rest: 'border-indigo text-indigo hover:bg-indigo hover:text-white',
     fill: 'border-indigo bg-indigo text-white',
+    fillKey: 'text-white/80',
   },
 ];
 
@@ -70,6 +84,7 @@ function makeSession(due) {
     xp: 0,
     streak: null,
     goalMet: false,
+    offline: 0,
     reviewAgainEmpty: false,
   };
 }
@@ -199,6 +214,12 @@ export default function Review() {
         ? 'never'
         : furiganaPreference;
   const navStreak = useAuth((s) => s.gamification?.currentStreak ?? 0);
+  const userId = useAuth((s) => s.user?.id);
+  const online = useOffline((s) => s.online);
+  const setPending = useOffline((s) => s.setPending);
+  // The review route renders outside AppShell, so it owns the global
+  // reconnect flush/offline banner for the full-screen session.
+  useOfflineSync();
 
   const [session, setSession] = useState(undefined); // undefined = first load
   const [revealed, setRevealed] = useState(false);
@@ -214,6 +235,22 @@ export default function Review() {
     setSession(undefined);
     setRevealed(false);
     try {
+      // D24: pending offline ratings land before the next queue is fetched.
+      if (userId && online) {
+        const queued = await pendingCount(userId).catch(() => 0);
+        setPending(queued);
+        if (queued > 0) {
+          const flushed = await flushOfflineReviews(userId);
+          if (flushed.synced > 0) {
+            await useAuth
+              .getState()
+              .hydrate()
+              .catch(() => {});
+            queryClient.invalidateQueries({ queryKey: ['quests', 'today'] });
+            queryClient.invalidateQueries({ queryKey: ['progress', 'stats'] });
+          }
+        }
+      }
       const due = await api('/progress/due');
       setSession(makeSession(due));
     } catch (err) {
@@ -232,9 +269,9 @@ export default function Review() {
     setUndoView(null);
   }
 
-  function openUndo(snapshot, cardId, rating) {
-    undoRef.current = { snapshot, cardId };
-    setUndoView({ rating });
+  function openUndo(snapshot, cardId, rating, queuedEventId = null) {
+    undoRef.current = { snapshot, cardId, queuedEventId };
+    setUndoView({ rating, queued: Boolean(queuedEventId) });
     clearTimeout(undoTimerRef.current);
     undoTimerRef.current = setTimeout(clearUndo, 4000);
   }
@@ -244,6 +281,17 @@ export default function Review() {
     if (!entry) return;
     clearUndo();
     try {
+      if (entry.queuedEventId) {
+        const stillQueued = await listReviews(userId);
+        if (stillQueued.some((item) => item.eventId === entry.queuedEventId)) {
+          await removeReview(entry.queuedEventId);
+          setPending(await pendingCount(userId).catch(() => 0));
+          setSession(entry.snapshot); // local compensating restore (§6.5)
+          setRevealed(false);
+          feedback('undo');
+          return;
+        }
+      }
       const res = await api(`/review/${entry.cardId}/undo`, { method: 'POST' });
       mergeGamification({
         totalXP: res.xp.totalXP,
@@ -266,78 +314,135 @@ export default function Review() {
     if (!session || session.phase !== 'session' || !revealed || submitting) return;
     const snapshot = session; // pre-rating state, restored by undo
     const card = session.queue[0];
+    const eventId = newEventId();
+    const reviewedAt = new Date().toISOString();
     setPressed(rating);
     setSubmitting(true);
-    const request = api('/progress/review', {
-      method: 'POST',
-      body: { cardId: card.id, rating },
-    });
 
     window.setTimeout(async () => {
       let result = null;
+      let queued = false;
       try {
-        result = await request;
+        if (!online) throw new Error('offline');
+
+        // D24: drain older offline ratings before a fresh online submission.
+        const flushed = await flushOfflineReviews(userId);
+        const flushSummary = syncSummary(flushed);
+        if (flushSummary) push(flushSummary);
+        if (flushed.synced > 0) {
+          queryClient.invalidateQueries({ queryKey: ['quests', 'today'] });
+          queryClient.invalidateQueries({ queryKey: ['progress', 'stats'] });
+        }
+
+        result = await api('/progress/review', {
+          method: 'POST',
+          body: { cardId: card.id, rating, eventId, reviewedAt },
+        });
       } catch (err) {
-        push({ message: err.message, tone: 'info' });
+        const networkFailure = !online || !(err instanceof ApiError);
+        if (networkFailure && userId) {
+          try {
+            await enqueueReview({
+              userId,
+              cardId: card.id,
+              character: card.character,
+              rating,
+              reviewedAt,
+              eventId,
+            });
+            queued = true;
+            setPending(await pendingCount(userId).catch(() => 0));
+            push({
+              message: 'Saved offline — this review will sync when you reconnect.',
+              tone: 'info',
+            });
+          } catch (queueErr) {
+            push({ message: queueErr.message, tone: 'info' });
+          }
+        } else {
+          push({ message: err.message, tone: 'info' });
+        }
       }
       setPressed(null);
       setSubmitting(false);
-      if (!result) return; // card stays put for a retry
+      if (!result && !queued) return; // card stays put for a retry
 
       if (rating >= 2) feedback('correct');
       else if (rating === 1) feedback('tap');
       else feedback('again');
 
-      mergeGamification({
-        totalXP: result.xp.totalXP,
-        currentStreak: result.xp.currentStreak,
-        currentLevel: result.xp.level,
-        xpToNextLevel: result.xp.xpToNextLevel,
-        coins: result.xp.coins,
-      });
+      if (queued) {
+        const current = useAuth.getState().gamification ?? {};
+        result = {
+          xp: {
+            awarded: 0,
+            bonuses: [],
+            totalXP: current.totalXP ?? 0,
+            currentStreak: current.currentStreak ?? 0,
+            level: current.currentLevel ?? 1,
+            xpToNextLevel: current.xpToNextLevel ?? 0,
+            title: null,
+            previousLevel: current.currentLevel ?? 1,
+            leveledUp: false,
+            coins: current.coins ?? 0,
+            streakMilestone: null,
+            newlyUnlocked: [],
+          },
+          questCompletions: [],
+          questSweep: null,
+        };
+      } else {
+        mergeGamification({
+          totalXP: result.xp.totalXP,
+          currentStreak: result.xp.currentStreak,
+          currentLevel: result.xp.level,
+          xpToNextLevel: result.xp.xpToNextLevel,
+          coins: result.xp.coins,
+        });
 
-      // Phase 4: achievement unlocks toast immediately; level-up and streak
-      // milestones (§11.2/§11.4) celebrate on the summary screen so the
-      // session's rhythm is never interrupted mid-card. Only the achievement
-      // whose name the visible modal already shows skips its toast.
-      const celebrationKind = result.xp.leveledUp ? 'levelUp' : 'streak';
-      const foldedId =
-        celebrationKind === 'streak' && result.xp.streakMilestone
-          ? MILESTONE_ACHIEVEMENT[result.xp.streakMilestone]
-          : null;
-      for (const achievement of result.xp.newlyUnlocked ?? []) {
-        if (achievement.id === foldedId) continue; // folded into the modal
-        push({ message: unlockToastMessage(achievement), tone: 'success' });
-      }
-      for (const quest of result.questCompletions ?? []) {
-        push({
-          message: `Quest complete: ${quest.title} — +${quest.xpAwarded || quest.xpReward} XP, ${
-            quest.coinsAwarded || quest.coinReward
-          } coins`,
-          tone: 'success',
-        });
-      }
-      if (result.questSweep) {
-        push({
-          message: `Daily sweep complete — +${result.questSweep.awarded} XP`,
-          tone: 'success',
-        });
-      }
-      queryClient.invalidateQueries({ queryKey: ['quests', 'today'] });
-      queryClient.invalidateQueries({ queryKey: ['stats'] });
-      queryClient.invalidateQueries({ queryKey: ['progress', 'stats'] });
-      if (result.xp.leveledUp || result.xp.streakMilestone) {
-        feedback('reward');
-        setCelebration({
-          kind: celebrationKind,
-          level: result.xp.level,
-          title: result.xp.title,
-          newTitle: titleChanged(result.xp.previousLevel, result.xp.level),
-          streakDays: result.xp.streakMilestone,
-          achievement: foldedId
-            ? (result.xp.newlyUnlocked ?? []).find((a) => a.id === foldedId)
-            : null,
-        });
+        // Phase 4: achievement unlocks toast immediately; level-up and streak
+        // milestones (§11.2/§11.4) celebrate on the summary screen so the
+        // session's rhythm is never interrupted mid-card. Only the achievement
+        // whose name the visible modal already shows skips its toast.
+        const celebrationKind = result.xp.leveledUp ? 'levelUp' : 'streak';
+        const foldedId =
+          celebrationKind === 'streak' && result.xp.streakMilestone
+            ? MILESTONE_ACHIEVEMENT[result.xp.streakMilestone]
+            : null;
+        for (const achievement of result.xp.newlyUnlocked ?? []) {
+          if (achievement.id === foldedId) continue; // folded into the modal
+          push({ message: unlockToastMessage(achievement), tone: 'success' });
+        }
+        for (const quest of result.questCompletions ?? []) {
+          push({
+            message: `Quest complete: ${quest.title} — +${quest.xpAwarded || quest.xpReward} XP, ${
+              quest.coinsAwarded || quest.coinReward
+            } coins`,
+            tone: 'success',
+          });
+        }
+        if (result.questSweep) {
+          push({
+            message: `Daily sweep complete — +${result.questSweep.awarded} XP`,
+            tone: 'success',
+          });
+        }
+        queryClient.invalidateQueries({ queryKey: ['quests', 'today'] });
+        queryClient.invalidateQueries({ queryKey: ['stats'] });
+        queryClient.invalidateQueries({ queryKey: ['progress', 'stats'] });
+        if (result.xp.leveledUp || result.xp.streakMilestone) {
+          feedback('reward');
+          setCelebration({
+            kind: celebrationKind,
+            level: result.xp.level,
+            title: result.xp.title,
+            newTitle: titleChanged(result.xp.previousLevel, result.xp.level),
+            streakDays: result.xp.streakMilestone,
+            achievement: foldedId
+              ? (result.xp.newlyUnlocked ?? []).find((a) => a.id === foldedId)
+              : null,
+          });
+        }
       }
 
       setSession((prev) => ({
@@ -345,13 +450,14 @@ export default function Review() {
         queue: prev.queue.slice(1),
         rated: prev.rated + 1,
         good: prev.good + (rating >= RATING.GOOD ? 1 : 0),
-        xp: prev.xp + result.xp.awarded,
-        streak: result.xp.currentStreak,
-        goalMet: prev.goalMet || result.xp.bonuses.includes('goalMet'),
+        xp: prev.xp + (result.xp.awarded ?? 0),
+        streak: result.xp.currentStreak ?? prev.streak,
+        goalMet: prev.goalMet || (result.xp.bonuses ?? []).includes('goalMet'),
+        offline: prev.offline + (queued ? 1 : 0),
         phase: prev.queue.length === 1 ? 'summary' : 'session',
       }));
       setRevealed(false);
-      openUndo(snapshot, card.id, rating);
+      openUndo(snapshot, card.id, rating, queued ? eventId : null);
     }, 220);
   }
 
@@ -367,6 +473,10 @@ export default function Review() {
 
   async function suspend() {
     if (!session || session.phase !== 'session' || session.queue.length === 0) return;
+    if (!online) {
+      push({ message: 'Connect to bury a card for 7 days.', tone: 'info' });
+      return;
+    }
     const card = session.queue[0];
     try {
       await api(`/review/${card.id}/suspend`, { method: 'POST' });
@@ -472,6 +582,7 @@ export default function Review() {
           helpOpen={false}
           setHelpOpen={() => {}}
         />
+        <OfflineBanner />
         <main className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
           <Skeleton className="h-1 w-full" />
           <Skeleton className="mx-auto mt-8 h-32 w-32" style={{ borderRadius: '12px' }} />
@@ -492,6 +603,7 @@ export default function Review() {
           helpOpen={false}
           setHelpOpen={() => {}}
         />
+        <OfflineBanner />
         <main className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
           <div className="rounded-card border border-line-subtle bg-surface p-10 text-center shadow-sm">
             <h2 className="font-display text-2xl font-medium text-ink-primary">
@@ -529,6 +641,8 @@ export default function Review() {
         helpOpen={helpOpen}
         setHelpOpen={setHelpOpen}
       />
+
+      <OfflineBanner />
 
       <main className="mx-auto w-full max-w-[640px] px-4 pb-28 pt-16 md:pt-24">
         {/* Progress bar (§7.2): 4px, subtle bg, vermillion fill */}
@@ -578,6 +692,12 @@ export default function Review() {
               {session.rated} reviews
             </h1>
             <p className="text-sm text-ink-muted">completed</p>
+            {session.offline > 0 ? (
+              <p className="mt-1 text-xs text-ink-secondary">
+                {session.offline} {session.offline === 1 ? 'review is' : 'reviews are'} saved
+                offline and will sync when you reconnect.
+              </p>
+            ) : null}
             <div className="mt-5 font-mono text-sm text-ink-primary">
               Accuracy {Math.round((session.good / Math.max(session.rated, 1)) * 100)}%
               <span className="mx-2 text-ink-muted">|</span>+{session.xp} XP
@@ -636,6 +756,7 @@ export default function Review() {
         >
           <span>
             Rated <strong className="font-medium">{RATING_LABELS[undoView.rating]}</strong>
+            {undoView.queued ? <span className="text-ink-secondary"> · saved offline</span> : null}
           </span>
           <button
             type="button"
@@ -776,7 +897,7 @@ function CardStage({ card, revealed, pressed, submitting, furiganaOn, onReveal, 
                 <span
                   className={cn(
                     'mt-0.5 block text-[10px] font-normal',
-                    pressed === button.value ? 'text-white/80' : 'text-ink-muted'
+                    pressed === button.value ? button.fillKey : 'text-ink-muted'
                   )}
                 >
                   {button.key}

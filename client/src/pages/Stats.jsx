@@ -190,14 +190,14 @@ function AccuracyChart({ points = [] }) {
             dataKey="date"
             tickFormatter={shortDate}
             interval={6}
-            tick={{ fill: 'var(--ink-muted)', fontSize: 11 }}
+            tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
             axisLine={{ stroke: 'var(--border-subtle)' }}
             tickLine={false}
           />
           <YAxis
             domain={[0, 100]}
             tickFormatter={(value) => `${value}%`}
-            tick={{ fill: 'var(--ink-muted)', fontSize: 11 }}
+            tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
             axisLine={false}
             tickLine={false}
           />
@@ -239,13 +239,13 @@ function ForecastChart({ points = [] }) {
             dataKey="date"
             tickFormatter={shortDate}
             interval={6}
-            tick={{ fill: 'var(--ink-muted)', fontSize: 11 }}
+            tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
             axisLine={{ stroke: 'var(--border-subtle)' }}
             tickLine={false}
           />
           <YAxis
             allowDecimals={false}
-            tick={{ fill: 'var(--ink-muted)', fontSize: 11 }}
+            tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
             axisLine={false}
             tickLine={false}
           />

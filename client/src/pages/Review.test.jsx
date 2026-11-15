@@ -10,6 +10,8 @@ import { api } from '../lib/api.js';
 import Review from './Review.jsx';
 import { ToastProvider } from '../components/ui/Toast.jsx';
 import { useAuth } from '../stores/auth.js';
+import { useOffline } from '../stores/offline.js';
+import { __resetOfflineQueueForTests, pendingCount } from '../lib/offlineQueue.js';
 
 /** Review session — prompt.md §7.2. */
 
@@ -95,6 +97,8 @@ function renderReview() {
 
 beforeEach(() => {
   api.mockReset();
+  __resetOfflineQueueForTests();
+  useOffline.setState({ online: true, pending: 0, syncing: false });
   useAuth.setState({
     status: 'authed',
     user: { preferences: { furigana: true } },
@@ -142,13 +146,16 @@ describe('Review session (§7.2) — card flow', () => {
     await user.click(screen.getByRole('button', { name: 'Show answer' }));
     await user.click(screen.getByRole('button', { name: /^Good/ }));
 
-    // Server call (220ms fill, then advance)
+    // Server call (220ms fill, then advance); D24 adds eventId/reviewedAt.
     await waitFor(() =>
       expect(api).toHaveBeenCalledWith('/progress/review', {
         method: 'POST',
-        body: { cardId: CARD().id, rating: 2 },
+        body: expect.objectContaining({ cardId: CARD().id, rating: 2 }),
       })
     );
+    const reviewBody = api.mock.calls.find(([path]) => path === '/progress/review')[1].body;
+    expect(reviewBody.eventId).toMatch(/^[A-Za-z0-9_-]{8,64}$/);
+    expect(Number.isNaN(Date.parse(reviewBody.reviewedAt))).toBe(false);
     expect(await screen.findByText('Card 2 of 2')).toBeDefined();
 
     // Undo banner bottom-left with the previous rating (§7.2)
@@ -186,6 +193,38 @@ describe('Review session (§7.2) — card flow', () => {
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
   });
 
+  it('queues a rating offline and undoes a still-queued event locally (D24)', async () => {
+    const user = userEvent.setup();
+    useAuth.setState({
+      status: 'authed',
+      user: { id: 'offline-user', preferences: { furigana: true } },
+      gamification: null,
+    });
+    mockApi({ due: { items: [CARD()], total: 1, limit: 20, nextDueAt: null } });
+    renderReview();
+    await screen.findByTestId('review-kanji');
+    // Simulate the browser dropping offline after the page settled.
+    useOffline.setState({ online: false });
+    expect(await screen.findByText(/Offline — reviews will sync/)).toBeDefined();
+
+    await user.click(screen.getByRole('button', { name: 'Show answer' }));
+    await user.click(screen.getByRole('button', { name: /^Good/ }));
+
+    await waitFor(() => expect(useOffline.getState().pending).toBe(1));
+    expect(await pendingCount('offline-user')).toBe(1);
+    expect(api.mock.calls.some(([path]) => path === '/progress/review')).toBe(false);
+    expect(await screen.findByText(/Saved offline/)).toBeDefined();
+    expect(screen.getByText(/1 review is saved offline/)).toBeDefined();
+    expect(screen.getByText(/· saved offline/)).toBeDefined();
+
+    // The queue entry is undone locally — no server undo call for a queued event.
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() => expect(useOffline.getState().pending).toBe(0));
+    expect(api.mock.calls.some(([path]) => /^\/review\/.*\/undo$/.test(path))).toBe(false);
+    expect(await screen.findByText('Card 1 of 1')).toBeDefined();
+    expect(screen.getByTestId('review-kanji').textContent).toContain('水');
+  });
+
   it('keyboard: Space reveals, 1–4 rate, S skips to the back of the queue', async () => {
     const user = userEvent.setup();
     mockApi({
@@ -210,7 +249,7 @@ describe('Review session (§7.2) — card flow', () => {
     await waitFor(() =>
       expect(api).toHaveBeenCalledWith('/progress/review', {
         method: 'POST',
-        body: { cardId: SECOND.id, rating: 0 },
+        body: expect.objectContaining({ cardId: SECOND.id, rating: 0 }),
       })
     );
     // 1 rated + 水 still pending -> "Card 2 of 2", 水 back on top

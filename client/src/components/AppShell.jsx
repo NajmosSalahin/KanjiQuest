@@ -19,7 +19,10 @@ import { Avatar } from './ui/Avatar.jsx';
 import { Skeleton } from './ui/Skeleton.jsx';
 import { OnboardingModal } from './OnboardingModal.jsx';
 import { ShortcutsModal, useGlobalShortcuts } from './GlobalShortcuts.jsx';
+import { OfflineBanner, UpdatePrompt, useOfflineSync } from './OfflineStatus.jsx';
 import { useAuth } from '../stores/auth.js';
+import { usePWA } from '../stores/pwa.js';
+import { useToast } from './ui/Toast.jsx';
 import { cn } from '../lib/cn.js';
 
 /** Global chrome — prompt.md §7 "Global chrome" + the approved mockups. */
@@ -213,8 +216,17 @@ export function AppShell() {
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
   const openShortcuts = useCallback(() => setShortcutsOpen(true), []);
+  const offlineReady = usePWA((s) => s.offlineReady);
+  const { push } = useToast();
 
   useGlobalShortcuts({ enabled: !shortcutsOpen, onOpenHelp: openShortcuts });
+  useOfflineSync();
+
+  useEffect(() => {
+    if (!offlineReady) return;
+    push({ message: 'Kanji Garden is ready offline.', tone: 'success' });
+    usePWA.getState().setOfflineReady(false);
+  }, [offlineReady, push]);
 
   return (
     <div className="min-h-screen">
@@ -298,6 +310,8 @@ export function AppShell() {
         </div>
       </header>
 
+      <OfflineBanner />
+
       <main id="main" className="mx-auto max-w-app px-4 pb-24 pt-6 md:px-6 md:py-8 lg:px-8">
         <Outlet />
 
@@ -314,6 +328,7 @@ export function AppShell() {
 
       <MobileTabBar />
 
+      <UpdatePrompt />
       <ShortcutsModal open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       {user?.preferences?.onboardingCompleted === false ? <OnboardingModal open /> : null}
     </div>

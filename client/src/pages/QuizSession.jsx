@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
 import { MobileTabBar } from '../components/AppShell.jsx';
+import { OfflineBanner, useConnectivity } from '../components/OfflineStatus.jsx';
 import { CelebrationModal, titleChanged } from '../components/CelebrationModal.jsx';
 import { feedback } from '../lib/feedback.js';
 import { unlockToastMessage } from '../lib/gamification.js';
@@ -55,6 +56,9 @@ export default function QuizSession() {
   const queryClient = useQueryClient();
   const { push } = useToast();
   const mergeGamification = useAuth((s) => s.mergeGamification);
+  // Full-screen route: keep the offline strip accurate even though the shell
+  // (and its global sync hook) is not mounted. Quiz submissions stay online-only.
+  useConnectivity();
   const validMode = QUIZ_MODES.includes(mode);
   const modeTitle = QUIZ_MODE_INFO[mode]?.title ?? 'Quiz';
 
@@ -561,6 +565,7 @@ export default function QuizSession() {
     return (
       <div className="min-h-screen">
         <SessionTopBar onBack={() => navigate('/quiz', { replace: true })} counter={modeTitle} />
+        <OfflineBanner />
         <main className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
           <Skeleton className="h-1 w-full" />
           <Skeleton className="mx-auto mt-8 h-32 w-32" />
@@ -576,6 +581,7 @@ export default function QuizSession() {
     return (
       <div className="min-h-screen">
         <SessionTopBar onBack={() => navigate('/quiz', { replace: true })} counter={modeTitle} />
+        <OfflineBanner />
         <main className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
           <div className="rounded-card border border-line-subtle bg-surface p-10 text-center shadow-sm">
             <h1 className="font-display text-2xl font-medium text-ink-primary">
@@ -602,6 +608,7 @@ export default function QuizSession() {
     return (
       <div className="min-h-screen">
         <SessionTopBar onBack={() => navigate('/quiz', { replace: true })} counter={modeTitle} />
+        <OfflineBanner />
         <main className="mx-auto w-full max-w-[640px] px-4 pb-28 pt-16 md:pt-24">
           <section
             className="mx-auto flex max-w-[480px] flex-col items-center rounded-card border border-line-subtle bg-surface p-8 text-center shadow-sm"
@@ -686,6 +693,8 @@ export default function QuizSession() {
         helpOpen={helpOpen}
         setHelpOpen={setHelpOpen}
       />
+
+      <OfflineBanner />
 
       <main className="mx-auto w-full max-w-[640px] px-4 pb-28 pt-16 md:pt-24">
         {isSprint ? (

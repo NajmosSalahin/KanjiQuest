@@ -7,8 +7,8 @@ const variants = {
   ghost: 'bg-transparent text-ink-secondary hover:bg-subtle hover:text-ink-primary',
   // SRS rating colors (§3.1) — review buttons only (§7.2)
   again: 'bg-surface border border-crimson text-crimson hover:bg-crimson hover:text-white',
-  hard: 'bg-surface border border-persimmon text-persimmon hover:bg-persimmon hover:text-white',
-  good: 'bg-surface border border-matcha text-matcha hover:bg-matcha hover:text-white',
+  hard: 'bg-surface border border-persimmon text-persimmon hover:bg-persimmon hover:text-ink-primary',
+  good: 'bg-surface border border-matcha text-matcha hover:bg-matcha hover:text-ink-primary',
   easy: 'bg-surface border border-indigo text-indigo hover:bg-indigo hover:text-white',
 };
 

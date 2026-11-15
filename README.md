@@ -17,10 +17,10 @@ Build phases (see `prompt.md` §17):
 - [x] Phase 6 — Quiz modes
 - [x] Phase 7 — Store, leaderboard, profile
 - [x] Phase 8 — Onboarding, settings, polish
-- [ ] Phase 9 — PWA, accessibility, performance
+- [x] Phase 9 — PWA, accessibility, performance
 - [ ] Phase 10 — Deployment + release polish
 
-Live: client <https://kanjiquest.vercel.app> · API <https://kanjiquest-api.onrender.com>. Each phase ships a `version/X.Y.Z.md` note from v0.1.0 through v0.9.0.
+Live: client <https://kanjiquest.vercel.app> · API <https://kanjiquest-api.onrender.com>. Each phase ships a `version/X.Y.Z.md` note from v0.1.0 through v0.10.0.
 
 ## Requirements
 
@@ -76,6 +76,7 @@ shared/   constants + JSDoc typedefs used by both
 ## Docs
 
 - `prompt.md` — fixed product spec (source of truth)
-- `IMPLEMENTATION_PLAN.md` - plan, approved decisions D1-D21, phase acceptance criteria
+- `IMPLEMENTATION_PLAN.md` - plan, approved decisions D1-D27, phase acceptance criteria
 - `DECISIONS.md` — architecture decision log
+- `A11Y.md` — Phase 9 contrast audit, structural checks, owner screen-reader checklist
 - `CONTRIBUTING.md` — branching, commits, phase protocol

@@ -319,6 +319,26 @@ Delivery uses an adapter (`server/src/services/email.js`): `EMAIL_PROVIDER=brevo
 
 `reminderTime` and `reminderEnabled` remain preference fields only. Phase 9 will not add Web Push, notification permissions, or server-side scheduling. Revisit only with a new owner decision.
 
+### D23: PWA icon is a leaf/sprout mark (owner-approved)
+
+§6.14 requires 192, 512, and maskable icons but the project has no logo. The approved mark derives from the `StreakLeaf` line art: a vermillion sprout on the rice-paper canvas, square canvas, with the maskable variant inset inside the safe zone. PNGs are rasterized from one SVG source so the installed icon, favicon, and Apple touch icon stay visually identical.
+
+### D24: offline reviews are card ratings on a 24-hour local clock (owner-approved)
+
+Only ratings from a session whose card data was already loaded are queued (IndexedDB), scoped by `userId`. Each entry carries a client-generated `eventId` and the local `reviewedAt`. On reconnect the queue flushes **chronologically**; the server uses `reviewedAt` for SRS scheduling and history, and uses it for gamification (XP, daily bucket, streak, quests) **only while it does not move backwards past the profile's current activity day** - otherwise the server falls back to sync time and flags the adjustment in the response. Timestamps older than **24 hours** are rejected and reported; duplicate `eventId`s are idempotent. Quiz, store, suspend, and other mutations stay online-only. The client flushes pending reviews before submitting a new online rating. The queue does not survive account deletion (cleared with the local user scope).
+
+### D25: PWA updates are an idle, non-blocking prompt (owner-approved)
+
+The service worker uses `registerType: 'prompt'` (no silent `skipWaiting`). When a new build is waiting, the app shows a small **"Update available"** action in the global chrome, never a reload. It is suppressed on the full-screen review/quiz routes, while the browser is offline, and while offline reviews are still pending; after those clear, the prompt can appear. Reloading is always the user's choice.
+
+### D26: screen-reader test is owner-run from a prepared checklist (owner-approved)
+
+The assistant prepares the NVDA/Narrator checklist and performs automated/manual accessibility checks (focus order, labels, live regions, contrast, reduced motion). The owner runs the screen-reader pass on dashboard, review session, and kanji detail and reports issues; fixes and results are recorded in `A11Y.md`. Final sign-off is not blocked on hardware the assistant cannot operate.
+
+### D27: Phase 10 Docker files exist but are not run-tested locally (owner-approved)
+
+Phase 10 ships a `Dockerfile` and `docker-compose.yml` for the API/client with **no MongoDB service** (D1); Mongo comes from `MONGODB_URI`. Docker is not installed on the assistant's machine, so the files are authored and statically reviewed but cannot be run-tested locally. The live Render/Vercel path remains the verified deployment.
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.

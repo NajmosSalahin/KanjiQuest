@@ -7,7 +7,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 ## [Unreleased]
 
 - **Quest copy (open question #3 closed):** the 12 §6.7 phrases now ship as quest titles verbatim; descriptions were rewritten to add detail without repeating the title. Data-only change to `QUEST_DEFS`; rerun `npm run seed-quests -w server` against the live DB.
-- **Phase 9 approvals:** `vite-plugin-pwa` + Workbox approved as a client dev dependency (D22); reminder preferences remain storage-only (no push notifications).
+
+## [0.10.0] — 2026-11-15 — PWA, accessibility, performance (Phase 9) · tag `phase-9-complete`
+
+- **Installable PWA (D23):** leaf/sprout manifest, 192/512 + maskable icons, Apple touch icon, favicon, theme-color, and social head tags. One SVG source produced every raster size.
+- **Service worker + prompt updates (D25):** Workbox app-shell precache, offline SPA fallback, NetworkFirst caching only for the public kanji list, Google Fonts runtime caching, hourly update checks, and a small "Update available" action that never reloads automatically and is suppressed offline, during full-screen sessions, and while reviews are queued.
+- **Offline reviews (D24):** IndexedDB queue scoped by `userId` with `eventId` + local `reviewedAt`; oldest-first reconnect flush; server uses `reviewedAt` for SRS/history and guards gamification against rewinding the activity day (`timestampAdjusted`); >24h entries are rejected with a summary; duplicate events are idempotent; quiz/store/suspend stay online-only.
+- **Server idempotency:** `ReviewEvent` unique `(userId, eventId)` + 7-day TTL, `migrate-100`, and `reviewedAt`/`eventId` validation on `POST /progress/review`. Replays return `duplicate: true`, `awarded: 0`, and never re-apply XP/history/quests/streak.
+- **Accessibility (§12 / D26):** text-only contrast tokens keep the §3 palette for fills/borders while fixing small light-theme text; furigana, stroke numbers, chart ticks, and rating pressed states corrected; `A11Y.md` records ratios, structural checks, and the owner NVDA/Narrator checklist.
+- **Performance (§13):** all routes lazy-loaded, vendor chunks split, main entry 12.3 kB gzip (was 152.8 kB); largest route chunk 8.8 kB gzip.
+- **Tests:** server **222** (+4 D24), client **108** (+10 offline queue/sync/review), live smoke **78/79** static checks on the release run (D24 idempotency + four PWA checks). Details: [version/0.10.0.md](version/0.10.0.md)
 
 ## [0.9.0] — 2026-11-14 — Onboarding, settings, polish (Phase 8) · tag `phase-8-complete`
 

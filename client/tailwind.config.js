@@ -29,6 +29,13 @@ export default {
         crimson: 'var(--danger-crimson)',
         focus: 'var(--focus-ring)',
       },
+      // §12: text-only overrides keep the §3 palette for fills/borders while
+      // giving small copy a 4.5:1 contrast ratio in light mode.
+      textColor: {
+        ink: { muted: 'var(--text-muted)' },
+        matcha: 'var(--text-matcha)',
+        persimmon: 'var(--text-persimmon)',
+      },
       fontFamily: {
         display: ['Fraunces', 'Georgia', 'serif'],
         body: ['"Instrument Sans"', 'system-ui', 'sans-serif'],

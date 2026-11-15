@@ -2,14 +2,23 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppShell } from './AppShell.jsx';
+import { ToastProvider } from './ui/Toast.jsx';
 import { useAuth } from '../stores/auth.js';
 
 function renderShell() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
   return render(
-    <MemoryRouter>
-      <AppShell />
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <MemoryRouter>
+          <AppShell />
+        </MemoryRouter>
+      </ToastProvider>
+    </QueryClientProvider>
   );
 }
 

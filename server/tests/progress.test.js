@@ -12,6 +12,7 @@ import { createApp } from '../src/app.js';
 import { Kanji } from '../src/models/Kanji.js';
 import { User } from '../src/models/User.js';
 import { UserProgress } from '../src/models/UserProgress.js';
+import { ReviewEvent } from '../src/models/ReviewEvent.js';
 import { GamificationProfile } from '../src/models/GamificationProfile.js';
 import { startTestDb, stopTestDb, clearDb } from './helpers/db.js';
 
@@ -77,12 +78,12 @@ async function add(jar, character) {
     .send({ character });
 }
 
-async function review(jar, cardId, rating) {
+async function review(jar, cardId, rating, extra = {}) {
   return request(app)
     .post('/api/v1/progress/review')
     .set(csrfHeaders)
     .set('Cookie', jar)
-    .send({ cardId, rating });
+    .send({ cardId, rating, ...extra });
 }
 
 beforeAll(async () => {
@@ -292,6 +293,130 @@ describe('POST /api/v1/progress/review', () => {
     const other = await signUp('other@example.com');
     const foreign = await review(other.jar, cardId, 2);
     expect(foreign.status).toBe(404);
+  });
+
+  describe('offline review timestamps + idempotency (D24)', () => {
+    async function dueCard(jar) {
+      const { body } = await request(app).get('/api/v1/progress/due').set('Cookie', jar);
+      return body.data.items[0].id;
+    }
+
+    it('stores reviewedAt on history and rejects entries older than 24h', async () => {
+      const { jar } = await signUp();
+      await add(jar, '水');
+      const cardId = await dueCard(jar);
+      const reviewedAt = new Date(Date.now() - 3 * 60 * 60 * 1000);
+
+      const res = await review(jar, cardId, 2, {
+        eventId: 'offline-review-0001',
+        reviewedAt: reviewedAt.toISOString(),
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.data.timestampAdjusted).toBe(false);
+
+      const stored = await UserProgress.findOne({ _id: cardId }).lean();
+      expect(stored.history[0].reviewedAt.getTime()).toBe(reviewedAt.getTime());
+      expect(stored.lastReviewedAt.getTime()).toBe(reviewedAt.getTime());
+      expect(await ReviewEvent.countDocuments({ cardId })).toBe(1);
+
+      const old = await review(jar, cardId, 2, {
+        eventId: 'offline-review-0002',
+        reviewedAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+      });
+      expect(old.status).toBe(422);
+      expect(old.body.error.code).toBe('REVIEW_TOO_OLD');
+    });
+
+    it('rejects future times beyond the skew and clamps small clock skew', async () => {
+      const { jar } = await signUp();
+      await add(jar, '水');
+      const cardId = await dueCard(jar);
+
+      const future = await review(jar, cardId, 2, {
+        eventId: 'offline-review-0003',
+        reviewedAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      });
+      expect(future.status).toBe(422);
+      expect(future.body.error.code).toBe('INVALID_REVIEW_TIME');
+
+      const before = Date.now();
+      const skewed = await review(jar, cardId, 2, {
+        eventId: 'offline-review-0004',
+        reviewedAt: new Date(Date.now() + 60 * 1000).toISOString(),
+      });
+      expect(skewed.status).toBe(200);
+      expect(new Date(skewed.body.data.reviewedAt).getTime()).toBeLessThanOrEqual(
+        Date.now() + 1000
+      );
+      expect(new Date(skewed.body.data.reviewedAt).getTime()).toBeGreaterThanOrEqual(before);
+    });
+
+    it('replays an event id idempotently and conflicts on a different rating', async () => {
+      const { jar } = await signUp();
+      await add(jar, '水');
+      const cardId = await dueCard(jar);
+      const reviewedAt = new Date().toISOString();
+      const body = { eventId: 'offline-review-0005', reviewedAt };
+
+      const first = await review(jar, cardId, 2, body);
+      expect(first.status).toBe(200);
+      const historyAfterFirst = (await UserProgress.findOne({ _id: cardId }).lean()).history.length;
+
+      const replay = await review(jar, cardId, 2, body);
+      expect(replay.status).toBe(200);
+      expect(replay.body.data.duplicate).toBe(true);
+      expect(replay.body.data.xp.awarded).toBe(0);
+      expect(replay.body.data.xp.totalXP).toBe(first.body.data.xp.totalXP);
+      expect(await ReviewEvent.countDocuments({ eventId: body.eventId })).toBe(1);
+      expect((await UserProgress.findOne({ _id: cardId }).lean()).history).toHaveLength(
+        historyAfterFirst
+      );
+
+      // A lost response replayed after the 24h window is still acknowledged.
+      const lateReplay = await review(jar, cardId, 2, {
+        eventId: body.eventId,
+        reviewedAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+      });
+      expect(lateReplay.status).toBe(200);
+      expect(lateReplay.body.data.duplicate).toBe(true);
+
+      const conflict = await review(jar, cardId, 0, body);
+      expect(conflict.status).toBe(409);
+      expect(conflict.body.error.code).toBe('REVIEW_EVENT_CONFLICT');
+    });
+
+    it('keeps gamification on the current activity day for a backdated review', async () => {
+      const { jar } = await signUp();
+      // Pin the account to UTC so "previous calendar day" is deterministic.
+      await User.updateOne({ email: 'rina@example.com' }, { $set: { timezone: 'UTC' } });
+      await add(jar, '水');
+      const water = await dueCard(jar);
+      const first = await review(jar, water, 2);
+      expect(first.body.data.xp.currentStreak).toBe(1);
+
+      await add(jar, '火');
+      const fire = await dueCard(jar);
+      // 23:59:59 on the previous UTC day: always a different calendar day,
+      // always inside the 24h acceptance window (at most ~24h ago).
+      const now = new Date();
+      const previousDay = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - 1000
+      );
+      const backdated = await review(jar, fire, 2, {
+        eventId: 'offline-review-0006',
+        reviewedAt: previousDay.toISOString(),
+      });
+      expect(backdated.status).toBe(200);
+      expect(backdated.body.data.timestampAdjusted).toBe(true);
+      expect(backdated.body.data.xp.currentStreak).toBe(1);
+
+      const today = new Date().toISOString().slice(0, 10);
+      const profile = await GamificationProfile.findOne({
+        userId: (await User.findOne({ email: 'rina@example.com' }))._id,
+      }).lean();
+      expect(profile.lastActivityDate).toBe(today);
+      expect(profile.lastReviewDate).toBe(today);
+    });
   });
 });
 
