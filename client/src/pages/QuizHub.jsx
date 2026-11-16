@@ -53,7 +53,7 @@ function ModeCard({ mode, count, label, onStart, wide = false }) {
       <div className={wide ? 'md:w-40' : 'mt-4'}>
         <Button
           variant="outline"
-          className="w-full hover:border-vermillion hover:bg-vermillion hover:text-white"
+          className="w-full hover:border-vermillion hover:bg-vermillion hover:text-on-accent"
           onClick={onStart}
           disabled={count === 0}
         >

@@ -72,10 +72,12 @@ export default defineConfig({
           ) {
             return 'react-vendor';
           }
-          if (id.includes('@tanstack')) return 'query-vendor';
-          if (/node_modules[\\/](recharts|d3-|victory-)/.test(id)) return 'charts-vendor';
-          if (id.includes('lucide-react')) return 'icons-vendor';
-          return 'vendor';
+          if (/node_modules[\\/]@tanstack[\\/](react-query|query-core)[\\/]/.test(id)) {
+            return 'query-vendor';
+          }
+          // Everything else stays route-split: a catch-all vendor chunk made
+          // the login page download form/validation/chart code it never uses.
+          return undefined;
         },
       },
     },

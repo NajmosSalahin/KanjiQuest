@@ -7,6 +7,9 @@ import { env } from '../config/env.js';
 
 export const ACCESS_COOKIE = 'kg_access';
 export const REFRESH_COOKIE = 'kg_refresh';
+// Readable, non-secret hint so the SPA can skip an anonymous /users/me probe.
+// The real session stays enclosed in the two HttpOnly cookies above.
+export const SESSION_HINT_COOKIE = 'kg_session';
 export const ACCESS_TTL_SECONDS = 15 * 60;
 export const REFRESH_TTL_DAYS = 7;
 
@@ -45,9 +48,15 @@ export function setSessionCookies(res, accessToken, refreshToken) {
     ...baseCookieOptions,
     maxAge: REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
   });
+  res.cookie(SESSION_HINT_COOKIE, '1', {
+    ...baseCookieOptions,
+    httpOnly: false,
+    maxAge: REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
+  });
 }
 
 export function clearSessionCookies(res) {
   res.clearCookie(ACCESS_COOKIE, baseCookieOptions);
   res.clearCookie(REFRESH_COOKIE, baseCookieOptions);
+  res.clearCookie(SESSION_HINT_COOKIE, { ...baseCookieOptions, httpOnly: false });
 }

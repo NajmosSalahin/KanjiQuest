@@ -59,7 +59,7 @@ function Choice({ selected, label, description, onClick }) {
       <span
         className={cn(
           'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border',
-          selected ? 'border-vermillion bg-vermillion text-white' : 'border-line-strong'
+          selected ? 'border-vermillion bg-vermillion text-on-accent' : 'border-line-strong'
         )}
         aria-hidden="true"
       >

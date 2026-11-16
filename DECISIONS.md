@@ -339,6 +339,16 @@ The assistant prepares the NVDA/Narrator checklist and performs automated/manual
 
 Phase 10 ships a `Dockerfile` and `docker-compose.yml` for the API/client with **no MongoDB service** (D1); Mongo comes from `MONGODB_URI`. Docker is not installed on the assistant's machine, so the files are authored and statically reviewed but cannot be run-tested locally. The live Render/Vercel path remains the verified deployment.
 
+### D28: Phase 9 release hardening (implementation note, no §2/§3 deviation)
+
+The first live Lighthouse pass exposed issues that the implementation had not covered, so these fixes ship in the 0.10.0 release commit:
+
+- **Readable session hint.** Login/register/refresh also set `kg_session=1` — a non-secret, non-HttpOnly cookie with the same 7-day lifetime and Strict scope as the real session. The SPA reads it to skip the anonymous `GET /users/me` probe (and its 401 + refresh round trips) on first visit. `kg_access` and `kg_refresh` remain HttpOnly; the hint says only "a session may exist" and is cleared by logout, password reset, and account deletion. Existing sessions created before this deploy have no hint and require one re-login.
+- **Font loading.** The Latin subsets of Fraunces, Instrument Sans, and Geist Mono are self-hosted under `client/public/fonts/` with their OFL licences, declared in `src/styles/fonts.css`, and the two first-paint faces are preloaded. Noto Sans JP / Noto Serif JP still come from Google Fonts, but their large unicode-range sheet loads asynchronously (`rel=preload as=style` → stylesheet) so it is no longer render-blocking.
+- **Filled-control contrast.** `--text-on-accent` (white in light, dark ink in dark) and `--text-on-bright` (dark ink in both) cover every label on accent fills. §3 palette values are unchanged.
+- **Route-split vendor code.** The catch-all `vendor` manual chunk was removed so the login route no longer downloads form/validation/chart code it never uses; only React and React Query keep named vendor chunks. The main JS chunk stays under the §13 200 kB gzip budget.
+- **Landmarks and crawlability.** Auth pages, Review, and QuizSession now render `<main id="main">`, so the global skip link always has a target; `client/public/robots.txt` replaces the SPA-fallback HTML that Lighthouse parsed as an invalid robots file.
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.

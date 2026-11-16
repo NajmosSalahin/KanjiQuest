@@ -1,15 +1,15 @@
 import { cn } from '../../lib/cn.js';
 
 const variants = {
-  primary: 'bg-vermillion text-white hover:bg-vermillion-hover',
+  primary: 'bg-vermillion text-on-accent hover:bg-vermillion-hover',
   outline:
     'bg-surface border border-line-subtle text-ink-primary hover:border-vermillion hover:text-vermillion',
   ghost: 'bg-transparent text-ink-secondary hover:bg-subtle hover:text-ink-primary',
   // SRS rating colors (§3.1) — review buttons only (§7.2)
-  again: 'bg-surface border border-crimson text-crimson hover:bg-crimson hover:text-white',
-  hard: 'bg-surface border border-persimmon text-persimmon hover:bg-persimmon hover:text-ink-primary',
-  good: 'bg-surface border border-matcha text-matcha hover:bg-matcha hover:text-ink-primary',
-  easy: 'bg-surface border border-indigo text-indigo hover:bg-indigo hover:text-white',
+  again: 'bg-surface border border-crimson text-crimson hover:bg-crimson hover:text-on-accent',
+  hard: 'bg-surface border border-persimmon text-persimmon hover:bg-persimmon hover:text-on-bright',
+  good: 'bg-surface border border-matcha text-matcha hover:bg-matcha hover:text-on-bright',
+  easy: 'bg-surface border border-indigo text-indigo hover:bg-indigo hover:text-on-accent',
 };
 
 const sizes = {

@@ -69,6 +69,12 @@ describe('POST /auth/register', () => {
     expect(setCookie).toMatch(/HttpOnly/i);
     expect(setCookie).toMatch(/SameSite=Strict/i);
 
+    // D28: non-secret hint for the SPA's anonymous bootstrap.
+    const hint = res.headers['set-cookie'].find((cookie) => cookie.startsWith('kg_session='));
+    expect(hint).toContain('kg_session=1');
+    expect(hint).toMatch(/SameSite=Strict/i);
+    expect(hint).not.toMatch(/HttpOnly/i);
+
     const users = await User.find();
     const profiles = await GamificationProfile.find();
     expect(users).toHaveLength(1);
@@ -220,6 +226,7 @@ describe('POST /auth/logout', () => {
       .set('Cookie', `kg_refresh=${refresh}`);
     expect(res.status).toBe(204);
     expect(res.headers['set-cookie'].join(';')).toContain('kg_refresh=;');
+    expect(res.headers['set-cookie'].join(';')).toContain('kg_session=;');
 
     const after = await request(app)
       .post('/api/v1/auth/refresh')

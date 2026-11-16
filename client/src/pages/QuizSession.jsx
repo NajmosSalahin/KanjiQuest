@@ -566,7 +566,7 @@ export default function QuizSession() {
       <div className="min-h-screen">
         <SessionTopBar onBack={() => navigate('/quiz', { replace: true })} counter={modeTitle} />
         <OfflineBanner />
-        <main className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
+        <main id="main" className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
           <Skeleton className="h-1 w-full" />
           <Skeleton className="mx-auto mt-8 h-32 w-32" />
           <Skeleton className="mx-auto mt-6 h-12 w-80" />
@@ -582,7 +582,7 @@ export default function QuizSession() {
       <div className="min-h-screen">
         <SessionTopBar onBack={() => navigate('/quiz', { replace: true })} counter={modeTitle} />
         <OfflineBanner />
-        <main className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
+        <main id="main" className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
           <div className="rounded-card border border-line-subtle bg-surface p-10 text-center shadow-sm">
             <h1 className="font-display text-2xl font-medium text-ink-primary">
               Couldn&apos;t start this quiz
@@ -609,7 +609,7 @@ export default function QuizSession() {
       <div className="min-h-screen">
         <SessionTopBar onBack={() => navigate('/quiz', { replace: true })} counter={modeTitle} />
         <OfflineBanner />
-        <main className="mx-auto w-full max-w-[640px] px-4 pb-28 pt-16 md:pt-24">
+        <main id="main" className="mx-auto w-full max-w-[640px] px-4 pb-28 pt-16 md:pt-24">
           <section
             className="mx-auto flex max-w-[480px] flex-col items-center rounded-card border border-line-subtle bg-surface p-8 text-center shadow-sm"
             data-testid="quiz-summary"
@@ -696,7 +696,7 @@ export default function QuizSession() {
 
       <OfflineBanner />
 
-      <main className="mx-auto w-full max-w-[640px] px-4 pb-28 pt-16 md:pt-24">
+      <main id="main" className="mx-auto w-full max-w-[640px] px-4 pb-28 pt-16 md:pt-24">
         {isSprint ? (
           <SprintTimer remainingMs={sprintLeft} flash={sprintFlash} />
         ) : (

@@ -44,33 +44,33 @@ const RATING_BUTTONS = [
     value: RATING.AGAIN,
     label: RATING_LABELS[RATING.AGAIN],
     key: '1',
-    rest: 'border-crimson text-crimson hover:bg-crimson hover:text-white',
-    fill: 'border-crimson bg-crimson text-white',
-    fillKey: 'text-white',
+    rest: 'border-crimson text-crimson hover:bg-crimson hover:text-on-accent',
+    fill: 'border-crimson bg-crimson text-on-accent',
+    fillKey: 'text-on-accent',
   },
   {
     value: RATING.HARD,
     label: RATING_LABELS[RATING.HARD],
     key: '2',
-    rest: 'border-persimmon text-persimmon hover:bg-persimmon hover:text-ink-primary',
-    fill: 'border-persimmon bg-persimmon text-ink-primary',
-    fillKey: 'text-ink-primary/80',
+    rest: 'border-persimmon text-persimmon hover:bg-persimmon hover:text-on-bright',
+    fill: 'border-persimmon bg-persimmon text-on-bright',
+    fillKey: 'text-on-bright',
   },
   {
     value: RATING.GOOD,
     label: RATING_LABELS[RATING.GOOD],
     key: '3',
-    rest: 'border-matcha text-matcha hover:bg-matcha hover:text-ink-primary',
-    fill: 'border-matcha bg-matcha text-ink-primary',
-    fillKey: 'text-ink-primary/80',
+    rest: 'border-matcha text-matcha hover:bg-matcha hover:text-on-bright',
+    fill: 'border-matcha bg-matcha text-on-bright',
+    fillKey: 'text-on-bright',
   },
   {
     value: RATING.EASY,
     label: RATING_LABELS[RATING.EASY],
     key: '4',
-    rest: 'border-indigo text-indigo hover:bg-indigo hover:text-white',
-    fill: 'border-indigo bg-indigo text-white',
-    fillKey: 'text-white/80',
+    rest: 'border-indigo text-indigo hover:bg-indigo hover:text-on-accent',
+    fill: 'border-indigo bg-indigo text-on-accent',
+    fillKey: 'text-on-accent',
   },
 ];
 
@@ -583,7 +583,7 @@ export default function Review() {
           setHelpOpen={() => {}}
         />
         <OfflineBanner />
-        <main className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
+        <main id="main" className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
           <Skeleton className="h-1 w-full" />
           <Skeleton className="mx-auto mt-8 h-32 w-32" style={{ borderRadius: '12px' }} />
           <Skeleton className="mx-auto mt-6 h-12 w-80" />
@@ -604,7 +604,7 @@ export default function Review() {
           setHelpOpen={() => {}}
         />
         <OfflineBanner />
-        <main className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
+        <main id="main" className="mx-auto w-full max-w-[640px] px-4 pt-16 md:pt-24">
           <div className="rounded-card border border-line-subtle bg-surface p-10 text-center shadow-sm">
             <h2 className="font-display text-2xl font-medium text-ink-primary">
               Couldn&apos;t load your reviews
@@ -644,7 +644,7 @@ export default function Review() {
 
       <OfflineBanner />
 
-      <main className="mx-auto w-full max-w-[640px] px-4 pb-28 pt-16 md:pt-24">
+      <main id="main" className="mx-auto w-full max-w-[640px] px-4 pb-28 pt-16 md:pt-24">
         {/* Progress bar (§7.2): 4px, subtle bg, vermillion fill */}
         <div
           className="h-1 w-full overflow-hidden rounded-full bg-line-subtle"

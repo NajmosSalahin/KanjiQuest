@@ -3,7 +3,7 @@
  *  Mobile: form only. */
 export function AuthLayout({ children }) {
   return (
-    <div className="flex min-h-screen">
+    <main id="main" className="flex min-h-screen">
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-[400px]">
           <span className="flex items-baseline gap-2">
@@ -45,6 +45,6 @@ export function AuthLayout({ children }) {
           Plant kanji. Watch them grow.
         </p>
       </aside>
-    </div>
+    </main>
   );
 }

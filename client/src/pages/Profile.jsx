@@ -412,7 +412,7 @@ export default function Profile() {
                   aria-label="Upload avatar"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={avatarMutation.isPending}
-                  className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-vermillion text-white shadow-sm transition-colors duration-fast ease-out hover:bg-vermillion-hover disabled:opacity-50"
+                  className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-vermillion text-on-accent shadow-sm transition-colors duration-fast ease-out hover:bg-vermillion-hover disabled:opacity-50"
                 >
                   <Camera size={15} aria-hidden="true" />
                 </button>

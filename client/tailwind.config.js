@@ -35,6 +35,8 @@ export default {
         ink: { muted: 'var(--text-muted)' },
         matcha: 'var(--text-matcha)',
         persimmon: 'var(--text-persimmon)',
+        'on-accent': 'var(--text-on-accent)',
+        'on-bright': 'var(--text-on-bright)',
       },
       fontFamily: {
         display: ['Fraunces', 'Georgia', 'serif'],

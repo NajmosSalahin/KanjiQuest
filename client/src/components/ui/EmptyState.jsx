@@ -81,7 +81,7 @@ export function EmptyState({
         action.to ? (
           <Link
             to={action.to}
-            className="inline-flex items-center justify-center gap-2 rounded-control bg-vermillion px-4 py-2 text-sm font-medium text-white transition-colors duration-fast ease-out hover:bg-vermillion-hover"
+            className="inline-flex items-center justify-center gap-2 rounded-control bg-vermillion px-4 py-2 text-sm font-medium text-on-accent transition-colors duration-fast ease-out hover:bg-vermillion-hover"
           >
             {action.label}
           </Link>

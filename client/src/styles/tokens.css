@@ -31,6 +31,11 @@
   --text-matcha: #435331; /* 7.9:1 on canvas */
   --text-persimmon: #8d5123; /* 5.9:1 on canvas */
 
+  /* Text on filled controls. Light-mode accent fills are dark, so white
+     passes; dark-mode accents are lighter, so they take the dark ink. */
+  --text-on-accent: #ffffff; /* on vermillion / crimson / indigo fills */
+  --text-on-bright: #1a1713; /* on matcha / persimmon fills */
+
   /* spacing is the Tailwind scale (§3.3) — see tailwind.config.js */
 
   /* shadows (§3.5) — only these three exist */
@@ -74,4 +79,8 @@
   --text-muted: var(--ink-muted);
   --text-matcha: var(--success-matcha);
   --text-persimmon: var(--warning-persimmon);
+
+  /* Dark accents are light fills, so both control labels use dark ink. */
+  --text-on-accent: #15130f;
+  --text-on-bright: #15130f;
 }

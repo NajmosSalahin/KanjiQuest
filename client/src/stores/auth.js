@@ -2,9 +2,18 @@ import { create } from 'zustand';
 import { api } from '../lib/api.js';
 
 /** Auth session state. Tokens live in httpOnly cookies — the store only
- *  mirrors the server's view (GET /users/me on hydrate). */
+ *  mirrors the server's view (GET /users/me on hydrate). `kg_session` is a
+ *  readable hint cookie set with the real session so first-time visitors can
+ *  go straight to /login without an anonymous 401 round trip. */
+const SESSION_HINT_COOKIE = 'kg_session';
+
+function hasSessionHint() {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.split('; ').includes(`${SESSION_HINT_COOKIE}=1`);
+}
+
 export const useAuth = create((set) => ({
-  status: 'loading', // 'loading' | 'authed' | 'guest'
+  status: hasSessionHint() ? 'loading' : 'guest', // 'loading' | 'authed' | 'guest'
   user: null,
   gamification: null,
 
@@ -23,6 +32,10 @@ export const useAuth = create((set) => ({
   },
 
   async hydrate() {
+    if (!hasSessionHint()) {
+      set({ status: 'guest', user: null, gamification: null });
+      return;
+    }
     try {
       const data = await api('/users/me');
       set({ status: 'authed', user: data.user, gamification: data.gamification });

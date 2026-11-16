@@ -1,5 +1,5 @@
 /**
- * Live smoke test - run after every phase's deploy (78-79 checks; the
+ * Live smoke test - run after every phase's deploy (82-83 checks; the
  * coin-purchase branch only runs when the throwaway account has coins).
  *
  *   node deploy/smoke.mjs                       # defaults to https://kanjiquest.vercel.app
@@ -22,8 +22,8 @@
  * avatar upload/serve/delete through the D17 storage adapter, Phase 8
  * onboarding preload/pace/idempotent retry, generic forgot-password and
  * invalid reset tokens, D24 offline reviewedAt + eventId idempotency, PWA
- * manifest/icons/service worker/head tags, logout, SPA fallback, security
- * headers.
+ * manifest/icons/service worker/head tags, D28 session hint + robots.txt +
+ * self-hosted font, logout, SPA fallback, security headers.
  *
  * Registers a throwaway `smoke+<epoch>@example.com` user; when a root `.env`
  * with MONGODB_URI is found (local runs), it deletes that user + sessions +
@@ -116,6 +116,11 @@ let registerSetCookies = [];
   check(
     'cookies: HttpOnly + Secure + SameSite=Strict',
     /httponly/i.test(sc) && /secure/i.test(sc) && /samesite=strict/i.test(sc)
+  );
+  const hint = registerSetCookies.find((cookie) => cookie.startsWith('kg_session='));
+  check(
+    'session hint cookie (D28)',
+    !!hint && /kg_session=1/.test(hint) && !/httponly/i.test(hint) && /samesite=strict/i.test(hint)
   );
 }
 
@@ -936,6 +941,11 @@ let storeSnapshot = null;
     r.status === 204 && me.status === 401,
     `logout=${r.status} me=${me.status}`
   );
+  check(
+    'logout clears the session hint',
+    r.status === 204 && /kg_session=;/.test(r.setCookies.join(';')),
+    `cleared=${r.setCookies.length}`
+  );
 }
 
 // 24. anonymous invariants (Phase 3): myProgress null, status=learning empty
@@ -1041,6 +1051,24 @@ let storeSnapshot = null;
       /name="theme-color"/i.test(html) &&
       /rel="apple-touch-icon"/i.test(html),
     `status=${home.status}`
+  );
+}
+
+// 25c. D28 release assets: crawl directives + self-hosted Latin font
+{
+  const robots = await fetch(BASE + '/robots.txt');
+  const robotsText = await robots.text();
+  check(
+    'robots.txt -> valid crawl directives',
+    robots.status === 200 && /^User-agent:\s*\*/m.test(robotsText) && !/<html/i.test(robotsText),
+    `status=${robots.status} bytes=${robotsText.length}`
+  );
+
+  const font = await fetch(BASE + '/fonts/instrument-sans-latin-var.woff2');
+  check(
+    'self-hosted Latin font -> served as woff2',
+    font.status === 200 && /font\/woff2/.test(font.headers.get('content-type') ?? ''),
+    `status=${font.status} type=${font.headers.get('content-type')}`
   );
 }
 

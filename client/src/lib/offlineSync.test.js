@@ -26,12 +26,15 @@ import { useOffline } from '../stores/offline.js';
 
 /** D24 flush — chronological, idempotent, keep-on-network/auth-server errors. */
 
+// Relative timestamps keep the 24-hour prune window from expiring the fixtures.
+const minutesAgo = (minutes) => new Date(Date.now() - minutes * 60_000).toISOString();
+
 const entry = (overrides = {}) => ({
   userId: 'user-a',
   cardId: '656f000000000000000000a1',
   character: '水',
   rating: 2,
-  reviewedAt: '2026-11-15T08:00:00.000Z',
+  reviewedAt: minutesAgo(30),
   eventId: 'event-one',
   ...overrides,
 });
@@ -44,8 +47,9 @@ beforeEach(() => {
 
 describe('flushOfflineReviews (D24)', () => {
   it('posts oldest first, removes synced entries, and counts timestamp adjustments', async () => {
-    await enqueueReview(entry({ eventId: 'older', reviewedAt: '2026-11-15T06:00:00.000Z' }));
-    await enqueueReview(entry({ eventId: 'newer', reviewedAt: '2026-11-15T07:00:00.000Z' }));
+    const olderAt = minutesAgo(120);
+    await enqueueReview(entry({ eventId: 'older', reviewedAt: olderAt }));
+    await enqueueReview(entry({ eventId: 'newer', reviewedAt: minutesAgo(60) }));
     api.mockImplementation(async (path, options) => ({
       timestampAdjusted: options.body.eventId === 'older',
     }));
@@ -59,7 +63,7 @@ describe('flushOfflineReviews (D24)', () => {
         cardId: entry().cardId,
         rating: 2,
         eventId: 'older',
-        reviewedAt: '2026-11-15T06:00:00.000Z',
+        reviewedAt: olderAt,
       },
     });
     expect(result).toMatchObject({ synced: 2, adjusted: 1, remaining: 0, stopped: false });
@@ -69,7 +73,7 @@ describe('flushOfflineReviews (D24)', () => {
 
   it('keeps the queue and stops on a network failure', async () => {
     await enqueueReview(entry({ eventId: 'one' }));
-    await enqueueReview(entry({ eventId: 'two', reviewedAt: '2026-11-15T09:00:00.000Z' }));
+    await enqueueReview(entry({ eventId: 'two', reviewedAt: minutesAgo(20) }));
     api.mockRejectedValue(new Error('offline'));
 
     const result = await flushOfflineReviews('user-a');
@@ -93,9 +97,7 @@ describe('flushOfflineReviews (D24)', () => {
 
   it('drops server-rejected entries and continues with the next one', async () => {
     await enqueueReview(entry({ eventId: 'expired', character: '水' }));
-    await enqueueReview(
-      entry({ eventId: 'valid', character: '火', reviewedAt: '2026-11-15T09:00:00.000Z' })
-    );
+    await enqueueReview(entry({ eventId: 'valid', character: '火', reviewedAt: minutesAgo(20) }));
     api
       .mockRejectedValueOnce(new ApiError('Too old.', 422, 'REVIEW_TOO_OLD'))
       .mockResolvedValueOnce({});

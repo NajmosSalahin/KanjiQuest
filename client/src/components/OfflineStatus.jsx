@@ -125,7 +125,7 @@ export function UpdatePrompt() {
       <button
         type="button"
         onClick={applyUpdate ?? undefined}
-        className="inline-flex items-center gap-1 rounded-control bg-vermillion px-2.5 py-1 text-xs font-medium text-white transition-colors duration-fast ease-out hover:bg-vermillion-hover"
+        className="inline-flex items-center gap-1 rounded-control bg-vermillion px-2.5 py-1 text-xs font-medium text-on-accent transition-colors duration-fast ease-out hover:bg-vermillion-hover"
       >
         <RefreshCw size={12} aria-hidden="true" />
         Refresh

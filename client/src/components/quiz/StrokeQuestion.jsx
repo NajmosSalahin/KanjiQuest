@@ -90,7 +90,7 @@ export function StrokeQuestion({
             className={cn(
               'inline-flex h-7 w-7 items-center justify-center rounded-control border font-mono text-xs',
               index < taps.length
-                ? 'border-vermillion bg-vermillion text-white'
+                ? 'border-vermillion bg-vermillion text-on-accent'
                 : 'border-line-subtle bg-surface text-ink-muted'
             )}
           >

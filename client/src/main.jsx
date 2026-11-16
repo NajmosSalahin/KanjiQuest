@@ -5,6 +5,7 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App.jsx';
 import { initTheme } from './lib/theme.js';
 import { usePWA } from './stores/pwa.js';
+import './styles/fonts.css';
 import './styles/tokens.css';
 import './styles/global.css';
 
