@@ -67,6 +67,15 @@ export const useAuth = create((set) => ({
       // Best effort: even if the request fails (offline, server down), the
       // local session state always drops to guest.
     }
+    try {
+      // D28: the query cache is a singleton, so clear it before another
+      // account can sign in on the same tab. Dynamic import keeps Query off
+      // the login first paint.
+      const { clearServerState } = await import('../components/ServerStateProvider.jsx');
+      clearServerState();
+    } catch {
+      // The provider may never have loaded; a reload clears memory anyway.
+    }
     set({ status: 'guest', user: null, gamification: null });
   },
 }));

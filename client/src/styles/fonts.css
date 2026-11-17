@@ -1,9 +1,9 @@
 /* ============================================================
-   SELF-HOSTED LATIN SUBSETS (§3 typography)
-   Only the Latin faces needed for first paint are bundled. Japanese
-   faces (Noto Sans JP / Noto Serif JP) load asynchronously from Google
-   Fonts in index.html so their large unicode-range sheets never block
-   rendering. OFL licences live in public/fonts/.
+   SELF-HOSTED SUBSETS (§3 typography)
+   Only the Latin faces and the two glyphs in the 植物 wordmark are bundled.
+   The full Noto Sans JP / Noto Serif JP sheets load on gated pages via
+   src/lib/japaneseFonts.js so auth first paint never waits on them.
+   OFL licences live in public/fonts/.
    ============================================================ */
 
 @font-face {
@@ -37,4 +37,16 @@
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Wordmark-only subset (植物) so auth pages never wait on the full Japanese
+   sheets. The complete Noto Sans/Serif JP faces load on gated pages via
+   src/lib/japaneseFonts.js. */
+@font-face {
+  font-family: 'Noto Serif JP';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/noto-serif-jp-wordmark.woff2') format('woff2');
+  unicode-range: U+690D, U+7269;
 }

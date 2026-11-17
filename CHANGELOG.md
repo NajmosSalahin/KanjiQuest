@@ -8,16 +8,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 
 - **Quest copy (open question #3 closed):** the 12 §6.7 phrases now ship as quest titles verbatim; descriptions were rewritten to add detail without repeating the title. Data-only change to `QUEST_DEFS`; rerun `npm run seed-quests -w server` against the live DB.
 
-## [0.10.0] — 2026-11-15 — PWA, accessibility, performance (Phase 9) · tag `phase-9-complete`
+## [0.10.0] — 2026-11-17 — PWA, accessibility, performance (Phase 9) · tag `phase-9-complete`
 
 - **Installable PWA (D23):** leaf/sprout manifest, 192/512 + maskable icons, Apple touch icon, favicon, theme-color, and social head tags. One SVG source produced every raster size.
 - **Service worker + prompt updates (D25):** Workbox app-shell precache, offline SPA fallback, NetworkFirst caching only for the public kanji list, Google Fonts runtime caching, hourly update checks, and a small "Update available" action that never reloads automatically and is suppressed offline, during full-screen sessions, and while reviews are queued.
 - **Offline reviews (D24):** IndexedDB queue scoped by `userId` with `eventId` + local `reviewedAt`; oldest-first reconnect flush; server uses `reviewedAt` for SRS/history and guards gamification against rewinding the activity day (`timestampAdjusted`); >24h entries are rejected with a summary; duplicate events are idempotent; quiz/store/suspend stay online-only.
 - **Server idempotency:** `ReviewEvent` unique `(userId, eventId)` + 7-day TTL, `migrate-100`, and `reviewedAt`/`eventId` validation on `POST /progress/review`. Replays return `duplicate: true`, `awarded: 0`, and never re-apply XP/history/quests/streak.
 - **Accessibility (§12 / D26):** text-only contrast tokens keep the §3 palette for fills/borders while fixing small light-theme text; `--text-on-accent` / `--text-on-bright` fix dark-mode labels on filled controls; furigana, stroke numbers, chart ticks, rating pressed states, and auth/full-screen landmarks corrected; `A11Y.md` records ratios, structural checks, and the owner NVDA/Narrator checklist.
-- **Performance (§13):** all routes lazy-loaded and vendor code route-split. The login page now loads a 28.5 kB gzip main chunk plus React/Query vendors (~124 kB total, down from ~233 kB); Latin fonts are self-hosted and the Noto JP sheet loads asynchronously.
-- **Release hardening (D28):** readable `kg_session` hint skips anonymous auth probes, font/render blocking removed, on-accent contrast tokens, `<main id="main">` on auth/review/quiz, and a real `robots.txt`.
-- **Tests:** server **222** (+4 D24), client **110** (+10 offline queue/sync/review, +2 auth bootstrap), live smoke **82/83** static checks on the release run (D24 idempotency + four PWA + four D28 checks). Details: [version/0.10.0.md](version/0.10.0.md)
+- **Performance (§13):** all routes lazy-loaded; the app shell and Query provider are lazy too, and `/login` uses a small controlled form. The login route now ships a 6.6 kB gzip main chunk + 81.0 kB React vendor, with Query (12.1 kB), AppShell (7.1 kB), and the form stack (23.8 kB) behind the auth gate — down from ~233 kB on the first pass. Latin + `植物` wordmark subsets are self-hosted; full Japanese faces load only on gated pages. Warmed Lighthouse mobile median: **Performance 93.5, Accessibility 100, Best Practices 100, SEO 100**.
+- **Release hardening (D28):** readable `kg_session` hint skips anonymous auth probes, font/render blocking removed, on-accent contrast tokens, `<main id="main">` on auth/review/quiz, a real `robots.txt`, per-route canonical URLs, deferred service-worker registration, lazy app-shell/query providers, and `clearServerState()` on sign-out/account deletion so a second account never sees the previous learner's cached data.
+- **Tests:** server **222** (+4 D24), client **110** (+10 offline queue/sync/review, +2 auth bootstrap), live smoke **82/82** on the release run (D24 idempotency + four PWA + four D28 checks). Details: [version/0.10.0.md](version/0.10.0.md)
 
 ## [0.9.0] — 2026-11-14 — Onboarding, settings, polish (Phase 8) · tag `phase-8-complete`
 

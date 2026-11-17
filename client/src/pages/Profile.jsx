@@ -17,6 +17,7 @@ import { cn } from '../lib/cn.js';
 import { applyTheme } from '../lib/theme.js';
 import { clearReviews } from '../lib/offlineQueue.js';
 import { useAuth } from '../stores/auth.js';
+import { clearServerState } from '../components/ServerStateProvider.jsx';
 import { AchievementIcon } from '../components/AchievementIcon.jsx';
 import { Avatar } from '../components/ui/Avatar.jsx';
 import { Button } from '../components/ui/Button.jsx';
@@ -300,6 +301,7 @@ export default function Profile() {
     onSuccess: () => {
       // D24: queued ratings belong to the deleted account and must not linger.
       clearReviews(user.id).catch(() => {});
+      clearServerState();
       useAuth.setState({ status: 'guest', user: null, gamification: null });
       navigate('/login', { replace: true });
     },

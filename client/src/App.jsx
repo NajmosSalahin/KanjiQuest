@@ -1,12 +1,19 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast.jsx';
 import { Skeleton } from './components/ui/Skeleton.jsx';
-import { AppShell } from './components/AppShell.jsx';
 import { RequireAuth, RedirectIfAuthed } from './components/guards.jsx';
 import { useAuth } from './stores/auth.js';
 import { applyTheme, watchSystemTheme } from './lib/theme.js';
 
+const AppShell = lazy(() =>
+  import('./components/AppShell.jsx').then((module) => ({ default: module.AppShell }))
+);
+const ServerStateProvider = lazy(() =>
+  import('./components/ServerStateProvider.jsx').then((module) => ({
+    default: module.ServerStateProvider,
+  }))
+);
 const Login = lazy(() => import('./pages/Login.jsx'));
 const Register = lazy(() => import('./pages/Register.jsx'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
@@ -25,6 +32,23 @@ const Leaderboard = lazy(() => import('./pages/Leaderboard.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
 
 const isDev = import.meta.env.DEV;
+
+/** Canonical URLs are per-route in a SPA; keep the head tag in sync (§13). */
+function CanonicalLink() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    let link = document.head.querySelector('link[rel="canonical"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'canonical';
+      document.head.appendChild(link);
+    }
+    link.href = window.location.origin + pathname;
+  }, [pathname]);
+
+  return null;
+}
 
 /** Route-level lazy fallback (§2.12) — mirrors the page skeleton rhythm. */
 function RouteFallback() {
@@ -54,6 +78,7 @@ export default function App() {
   return (
     <ToastProvider>
       <BrowserRouter>
+        <CanonicalLink />
         <a className="skip-link" href="#main">
           Skip to content
         </a>
@@ -80,7 +105,9 @@ export default function App() {
             <Route
               element={
                 <RequireAuth>
-                  <AppShell />
+                  <ServerStateProvider>
+                    <AppShell />
+                  </ServerStateProvider>
                 </RequireAuth>
               }
             >
@@ -101,7 +128,9 @@ export default function App() {
               path="/review"
               element={
                 <RequireAuth>
-                  <Review />
+                  <ServerStateProvider>
+                    <Review />
+                  </ServerStateProvider>
                 </RequireAuth>
               }
             />
@@ -111,7 +140,9 @@ export default function App() {
               path="/quiz/play/:mode"
               element={
                 <RequireAuth>
-                  <QuizSession />
+                  <ServerStateProvider>
+                    <QuizSession />
+                  </ServerStateProvider>
                 </RequireAuth>
               }
             />

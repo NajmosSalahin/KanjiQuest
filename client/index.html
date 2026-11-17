@@ -20,16 +20,13 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://kanjiquest.vercel.app/" />
     <meta name="twitter:card" content="summary" />
-    <link rel="canonical" href="https://kanjiquest.vercel.app/" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>Kanji Garden</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Latin faces are self-hosted (src/styles/fonts.css) and preloaded so
-         first paint never waits on Google Fonts. Japanese faces load
-         asynchronously because their unicode-range sheets are large. -->
+    <!-- Latin faces and the 植物 wordmark subset are self-hosted
+         (src/styles/fonts.css) and preloaded so first paint never waits on
+         Google Fonts. The full Japanese sheets load on gated pages. -->
     <link
       rel="preload"
       href="/fonts/instrument-sans-latin-var.woff2"
@@ -46,19 +43,11 @@
     />
     <link
       rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400..500&family=Noto+Serif+JP:wght@400..500&display=swap"
-      onload="
-        this.onload = null;
-        this.rel = 'stylesheet';
-      "
+      href="/fonts/noto-serif-jp-wordmark.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
-    <noscript>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400..500&family=Noto+Serif+JP:wght@400..500&display=swap"
-      />
-    </noscript>
     <script>
       // Apply stored theme before first paint (settings ship in Phase 8).
       try {
