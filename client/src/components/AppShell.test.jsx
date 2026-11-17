@@ -53,6 +53,15 @@ describe('AppShell chrome (§7)', () => {
     expect(tabs.textContent).toContain('Profile');
   });
 
+  it('footer carries the KanjiVG copyright notice and licenses link', () => {
+    renderShell();
+    expect(
+      screen.getByText(/KanjiVG © Ulrich Apel and contributors, CC BY-SA 3\.0\./)
+    ).toBeTruthy();
+    const link = screen.getByRole('link', { name: /data sources and licenses/i });
+    expect(link.getAttribute('href')).toBe('/licenses');
+  });
+
   it('profile menu signs out via the store', async () => {
     const user = userEvent.setup();
     renderShell();

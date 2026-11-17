@@ -1,0 +1,54 @@
+# Local container run for the API + built client (D27).
+# There is deliberately no MongoDB service (D1): the API reads MONGODB_URI
+# from .env. Atlas works as-is; for a MongoDB running on the host use
+# mongodb://host.docker.internal:27017/kanjigarden (Docker Desktop).
+#
+#   copy .env.example .env   # fill MONGODB_URI + JWT secrets
+#   docker compose up --build
+#   http://localhost:8080    # client (nginx proxies /api to the api service)
+name: kanjiquest
+
+services:
+  api:
+    build:
+      context: .
+      target: api
+    image: kanjiquest-api:local
+    env_file:
+      - .env
+    environment:
+      # Plain HTTP locally: NODE_ENV=production would set Secure cookies that
+      # the browser refuses to send. Render still runs NODE_ENV=production.
+      NODE_ENV: development
+      PORT: '4000'
+      CLIENT_ORIGIN: http://localhost:8080
+      STORAGE_DRIVER: local
+    volumes:
+      - uploads:/app/server/uploads
+    expose:
+      - '4000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:4000/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  client:
+    build:
+      context: .
+      target: client
+    image: kanjiquest-client:local
+    depends_on:
+      - api
+    ports:
+      - '8080:80'
+
+volumes:
+  uploads:

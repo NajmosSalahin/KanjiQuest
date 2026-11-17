@@ -316,9 +316,12 @@ export function AppShell() {
 
         {/* Data attribution (§5.8) */}
         <footer className="mt-10 border-t border-line-subtle pt-4 text-center">
+          <p className="text-xs text-ink-muted">
+            KanjiVG © Ulrich Apel and contributors, CC BY-SA 3.0.
+          </p>
           <Link
             to="/licenses"
-            className="text-xs text-ink-muted underline-offset-4 transition-colors duration-fast ease-out hover:text-ink-secondary hover:underline"
+            className="mt-1 inline-block text-xs text-ink-muted underline-offset-4 transition-colors duration-fast ease-out hover:text-ink-secondary hover:underline"
           >
             Data sources and licenses.
           </Link>

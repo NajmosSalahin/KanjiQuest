@@ -419,5 +419,11 @@ describe('GET /api/v1/licenses — §5.8', () => {
       expect(source.license).toBeTruthy();
       expect(source.url).toMatch(/^https:\/\//);
     }
+
+    // §5.8: EDRDG data is CC BY-SA 4.0; KanjiVG remains CC BY-SA 3.0.
+    const licenseByName = Object.fromEntries(sources.map((s) => [s.name, s.license]));
+    expect(licenseByName.KANJIDIC2).toBe('CC BY-SA 4.0');
+    expect(licenseByName.JMdict).toBe('CC BY-SA 4.0');
+    expect(licenseByName.KanjiVG).toBe('CC BY-SA 3.0');
   });
 });

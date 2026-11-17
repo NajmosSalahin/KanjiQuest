@@ -8,6 +8,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 
 - **Quest copy (open question #3 closed):** the 12 §6.7 phrases now ship as quest titles verbatim; descriptions were rewritten to add detail without repeating the title. Data-only change to `QUEST_DEFS`; rerun `npm run seed-quests -w server` against the live DB.
 
+## [0.11.0] — 2026-11-17 — Deployment + release polish (Phase 10) · tag `phase-10-complete`
+
+- **Container stack (D27):** root multi-stage `Dockerfile` (`api` Node 22 target + `client` nginx target) and `docker-compose.yml` running <http://localhost:8080> with **no MongoDB service** (D1) — `MONGODB_URI` comes from `.env`. `.dockerignore` excludes dependencies, builds, seed caches, uploads, and env files. The API image keeps `NODE_ENV=production`; compose sets `development` so plain-HTTP cookies are not `Secure`.
+- **nginx proxy parity:** `deploy/nginx.conf` serves the SPA with fallback routing, proxies `/api/`, `/uploads/`, and `/health` to the API for same-origin cookies, mirrors the Vercel security headers, caches hashed assets, revalidates `sw.js`, and allows 2 MB avatars.
+- **Logger hardening:** the server logger falls back to plain pino when `pino-pretty` is absent (production-only images running development mode).
+- **Docs:** `DEPLOY.md` (Render Blueprint + dashboard secrets, Railway parity, Vercel CLI-only client deploys with Git integration off, seeding/migrations, Brevo, Docker, smoke, troubleshooting), `ARCHITECTURE.md` (Mermaid topology, API surface, collections, SRS/gamification/quiz/stats, offline sync, security, environments, seed pipeline), and a final `README.md` (setup, exact seed commands + 5–15 min expectation, coverage-report explanation, Docker, deployment, licenses).
+- **Licensing (§5.8):** KANJIDIC2 and JMdict corrected to **CC BY-SA 4.0** (KanjiVG stays **CC BY-SA 3.0**), and the KanjiVG copyright notice now sits in the app footer next to the `/licenses` link.
+- **Release:** all workspaces at `0.11.0`; lockfile refreshed; Phase 9 tags remain deferred pending the owner's NVDA/Narrator sign-off.
+- **Tests:** server **222**, client **111** (+1 footer notice), live smoke **84/84** (+2 licenses API + `/licenses` fallback). Details: [version/0.11.0.md](version/0.11.0.md)
+
 ## [0.10.0] — 2026-11-17 — PWA, accessibility, performance (Phase 9) · tag `phase-9-complete`
 
 - **Installable PWA (D23):** leaf/sprout manifest, 192/512 + maskable icons, Apple touch icon, favicon, theme-color, and social head tags. One SVG source produced every raster size.

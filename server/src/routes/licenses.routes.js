@@ -16,7 +16,7 @@ licensesRouter.get('/', (req, res) => {
       {
         name: 'KANJIDIC2',
         description: 'Kanji meanings, readings, radicals, grades, and frequency.',
-        license: 'CC BY-SA 3.0',
+        license: 'CC BY-SA 4.0',
         url: 'https://www.edrdg.org/kanjidic/kanjidic2.html',
         attribution: 'EDRDG (Electronic Dictionary Research and Development Group)',
       },
@@ -30,7 +30,7 @@ licensesRouter.get('/', (req, res) => {
       {
         name: 'JMdict',
         description: 'Example words and glosses (via jmdict-simplified).',
-        license: 'CC BY-SA 3.0',
+        license: 'CC BY-SA 4.0',
         url: 'https://www.edrdg.org/jmdict/j_jmdict.html',
         attribution: 'EDRDG',
       },

@@ -1,0 +1,15 @@
+# Build context exclusions — keep images small and secrets out of the daemon.
+.git
+.gitignore
+**/node_modules
+**/dist
+**/coverage
+server/.data
+server/uploads
+.env
+.env.*
+!.env.example
+*.log
+smoke-phase7*.log
+version
+mockups.html

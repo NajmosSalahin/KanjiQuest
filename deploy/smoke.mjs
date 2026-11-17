@@ -99,6 +99,24 @@ console.log(`smoke target: ${BASE}\n`);
   );
 }
 
+// 1b. data-source attribution (§5.8)
+{
+  const r = await call('/api/v1/licenses');
+  const sources = r.json?.data?.sources ?? [];
+  const byName = Object.fromEntries(sources.map((s) => [s.name, s.license]));
+  check(
+    'licenses -> 200 + EDRDG 4.0 / KanjiVG 3.0',
+    r.status === 200 &&
+      r.json?.success === true &&
+      sources.length === 5 &&
+      byName.KANJIDIC2 === 'CC BY-SA 4.0' &&
+      byName.JMdict === 'CC BY-SA 4.0' &&
+      byName.KanjiVG === 'CC BY-SA 3.0' &&
+      /Ulrich Apel/.test(r.json?.data?.notice ?? ''),
+    `status=${r.status} count=${sources.length}`
+  );
+}
+
 // 2. register + cookie attributes
 let registerSetCookies = [];
 {
@@ -1000,6 +1018,16 @@ let storeSnapshot = null;
       /<!doctype html>/i.test(resetHtml) &&
       resetHtml.includes('<div id="root"'),
     `status=${resetPage.status}`
+  );
+
+  const licensesPage = await fetch(BASE + '/licenses');
+  const licensesHtml = await licensesPage.text();
+  check(
+    'SPA fallback /licenses serves app',
+    licensesPage.status === 200 &&
+      /<!doctype html>/i.test(licensesHtml) &&
+      licensesHtml.includes('<div id="root"'),
+    `status=${licensesPage.status}`
   );
 }
 

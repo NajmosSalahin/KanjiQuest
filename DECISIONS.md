@@ -353,6 +353,13 @@ The first live Lighthouse pass exposed issues that the implementation had not co
 
 Live verification: Lighthouse 13.6.0 mobile, four warmed runs after deploy — Performance **93.5** (90–94), Accessibility **100**, Best Practices **100**, SEO **100**; FCP 0.8–0.9 s, CLS 0. The discarded warm-up run scored 82; see `A11Y.md` for the methodology and outliers.
 
+### D29: Phase 10 release decisions (implementation note, no §2/§3 deviation)
+
+- **Phase 9 starts Phase 10 untagged (owner, 2026-11-17).** The NVDA/Narrator rows in `A11Y.md` are still `_pending_`, so `v0.10.0` / `phase-9-complete` are deferred until the owner signs off. Phase 10 does not edit those rows.
+- **Compose uses `NODE_ENV=development`.** The containerised client is served over plain HTTP on port 8080; production mode would set `Secure` cookies the browser would not send. The API image itself still defaults to `production` for Render. `pino-pretty` is dev-only, so the logger now resolves it defensively and falls back to plain pino.
+- **License correction.** `GET /api/v1/licenses` now reports KANJIDIC2 and JMdict as **CC BY-SA 4.0** (EDRDG's current terms); KanjiVG stays **CC BY-SA 3.0** and its copyright notice is shown in the app footer as §5.8 requires. The route remains inside the authenticated shell; the footer link is the public entry point.
+- **Client deploys stay CLI-only.** Vercel Git integration remains disconnected (see the 2026-10-27 entry); Render auto-deploys `main` for the API.
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.
