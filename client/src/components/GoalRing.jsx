@@ -33,9 +33,11 @@ export function GoalRing({ value, total, size = 64, stroke = 5 }) {
           style={{ transition: 'stroke-dashoffset var(--duration-normal) var(--ease-out)' }}
         />
       </svg>
-      <div className="absolute inset-0 flex items-baseline justify-center pt-1">
-        <span className="font-mono text-xl leading-none text-ink-primary">{value}</span>
-        <span className="ml-0.5 text-xs leading-none text-ink-muted">XP</span>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex items-baseline">
+          <span className="font-mono text-xl leading-none text-ink-primary">{value}</span>
+          <span className="ml-0.5 text-xs leading-none text-ink-muted">XP</span>
+        </div>
       </div>
     </div>
   );
