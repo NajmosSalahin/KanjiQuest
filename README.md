@@ -22,9 +22,10 @@ Build phases (see `prompt.md` §17). Every phase has a `version/X.Y.Z.md` note; 
 - [x] Phase 9 — PWA, accessibility, performance
 - [x] Phase 10 — Deployment + release polish
 
-Phase 9's manual NVDA/Narrator sign-off in [`A11Y.md`](./A11Y.md) is still
-pending, so the `phase-9-complete` / `v0.10.0` tags are intentionally deferred.
-See the deployment notes for the rest.
+Phase 9's manual NVDA/Narrator sign-off in [`A11Y.md`](./A11Y.md) was declined by
+the owner (D30), so it is recorded as **not performed** rather than passed. All
+phase tags, including `phase-9-complete` / `v0.10.0`, now exist. See the
+deployment notes for the rest.
 
 ## Requirements
 

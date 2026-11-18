@@ -360,6 +360,10 @@ Live verification: Lighthouse 13.6.0 mobile, four warmed runs after deploy — P
 - **License correction.** `GET /api/v1/licenses` now reports KANJIDIC2 and JMdict as **CC BY-SA 4.0** (EDRDG's current terms); KanjiVG stays **CC BY-SA 3.0** and its copyright notice is shown in the app footer as §5.8 requires. The route remains inside the authenticated shell; the footer link is the public entry point.
 - **Client deploys stay CLI-only.** Vercel Git integration remains disconnected (see the 2026-10-27 entry); Render auto-deploys `main` for the API.
 
+### D30: Screen-reader sign-off declined (owner, 2026-11-18)
+
+The owner declined the NVDA/Narrator pass in `A11Y.md`. §12's requirement that the app be "screen-reader tested on dashboard, review session, and kanji detail" is therefore recorded as an **accepted limitation — not performed**; the `A11Y.md` sign-off rows say "Not performed — owner declined" and must not be read as a pass. The automated evidence stands: Lighthouse Accessibility **100**, the measured contrast table (all text ≥ 4.5:1 in both themes), the 14 structural/manual checks, and the 111 client tests. The checklist itself stays in `A11Y.md` for a future re-audit. `phase-9-complete` / `v0.10.0` were created on `6f107f6` (the Phase 9 completion commit) on 2026-11-18, closing the last outstanding tag.
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.

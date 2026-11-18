@@ -15,7 +15,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 - **Logger hardening:** the server logger falls back to plain pino when `pino-pretty` is absent (production-only images running development mode).
 - **Docs:** `DEPLOY.md` (Render Blueprint + dashboard secrets, Railway parity, Vercel CLI-only client deploys with Git integration off, seeding/migrations, Brevo, Docker, smoke, troubleshooting), `ARCHITECTURE.md` (Mermaid topology, API surface, collections, SRS/gamification/quiz/stats, offline sync, security, environments, seed pipeline), and a final `README.md` (setup, exact seed commands + 5–15 min expectation, coverage-report explanation, Docker, deployment, licenses).
 - **Licensing (§5.8):** KANJIDIC2 and JMdict corrected to **CC BY-SA 4.0** (KanjiVG stays **CC BY-SA 3.0**), and the KanjiVG copyright notice now sits in the app footer next to the `/licenses` link.
-- **Release:** all workspaces at `0.11.0`; lockfile refreshed; Phase 9 tags remain deferred pending the owner's NVDA/Narrator sign-off.
+- **Release:** all workspaces at `0.11.0`; lockfile refreshed; Phase 9 tags were created on 2026-11-18 after the owner declined the screen-reader sign-off (D30).
 - **Tests:** server **222**, client **111** (+1 footer notice), live smoke **84/84** (+2 licenses API + `/licenses` fallback). Details: [version/0.11.0.md](version/0.11.0.md)
 
 ## [0.10.0] — 2026-11-17 — PWA, accessibility, performance (Phase 9) · tag `phase-9-complete`
