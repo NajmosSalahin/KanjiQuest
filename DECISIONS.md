@@ -364,6 +364,10 @@ Live verification: Lighthouse 13.6.0 mobile, four warmed runs after deploy — P
 
 The owner declined the NVDA/Narrator pass in `A11Y.md`. §12's requirement that the app be "screen-reader tested on dashboard, review session, and kanji detail" is therefore recorded as an **accepted limitation — not performed**; the `A11Y.md` sign-off rows say "Not performed — owner declined" and must not be read as a pass. The automated evidence stands: Lighthouse Accessibility **100**, the measured contrast table (all text ≥ 4.5:1 in both themes), the 14 structural/manual checks, and the 111 client tests. The checklist itself stays in `A11Y.md` for a future re-audit. `phase-9-complete` / `v0.10.0` were created on `6f107f6` (the Phase 9 completion commit) on 2026-11-18, closing the last outstanding tag.
 
+### D31: Learn grid cell readability (owner-approved, 2026-11-18)
+
+§7.3 originally required one ellipsized meanings line and a bottom-centered 6px dot. Long gloss lists (日: **day · sun · Japan · counter for days**) were cut mid-word (`counte…`), the dot floated in dead space, and the card read as unbalanced. The owner approved a full cell refresh: the primary meaning at `text-sm`, up to two secondary meanings plus a `+N` overflow count at `text-xs`, the full gloss list in the link `title`/`aria-label`, the JLPT level top-left, the status dot top-right with a tooltip, and vertically centered content. Cell height (144px), virtualization, and the dot colors/semantics are unchanged.
+
 ## Open questions (ask before implementing)
 
 1. ~~**`jsdom` / `happy-dom`**~~ — resolved Phase 1: `jsdom` added with owner approval.

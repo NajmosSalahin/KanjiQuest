@@ -77,29 +77,64 @@ function ProgressDot({ status }) {
   );
 }
 
+/** Primary meaning + at most two secondaries, with a +N overflow count so a
+ *  long gloss list never gets chopped mid-word by CSS ellipsis (§7.3). */
+function summarizeMeanings(meanings = []) {
+  const [primary = '', ...rest] = meanings;
+  const shown = rest.slice(0, 2);
+  const remaining = rest.length - shown.length;
+  return {
+    primary,
+    secondary: shown.length ? `${shown.join(' · ')}${remaining > 0 ? ` +${remaining}` : ''}` : '',
+  };
+}
+
 function KanjiCell({ item, style }) {
   const status = item.status ?? 'new';
   const statusLabel =
     status === 'mastered' ? 'Mastered' : status === 'learning' ? 'Learning' : 'New';
+  const meanings = item.meanings ?? [];
+  const { primary, secondary } = summarizeMeanings(meanings);
+  const label = [
+    item.character,
+    meanings.join(', '),
+    statusLabel,
+    item.jlptLevel ? `JLPT N${item.jlptLevel}` : null,
+  ]
+    .filter(Boolean)
+    .join(' — ');
+
   return (
     <Link
       to={`/kanji/${encodeURIComponent(item.character)}`}
       style={style}
+      title={label}
+      aria-label={label}
       className={cn(
-        'group flex h-36 flex-col items-center rounded-card border border-line-subtle bg-surface px-3 pt-3 pb-2 text-center',
+        'group relative flex h-36 flex-col items-center justify-center rounded-card border border-line-subtle bg-surface px-3 py-3 text-center',
         'transition duration-fast ease-out hover:border-line-strong hover:shadow-sm'
       )}
     >
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-2.5 top-2 flex items-center justify-between"
+      >
+        <span className="font-mono text-[10px] leading-none text-ink-muted">
+          {item.jlptLevel ? `N${item.jlptLevel}` : null}
+        </span>
+        <span title={statusLabel} className="flex items-center">
+          <ProgressDot status={status} />
+        </span>
+      </span>
       <span className="font-jp-serif text-[3rem] leading-none text-ink-primary">
         {item.character}
       </span>
-      <span className="mt-2 w-full truncate text-xs text-ink-secondary">
-        {(item.meanings ?? []).join(' · ')}
-      </span>
-      <span className="mt-auto flex items-center gap-1.5 pt-1.5">
-        <ProgressDot status={status} />
-        <span className="sr-only">{statusLabel}</span>
-      </span>
+      {primary ? (
+        <span className="mt-2 max-w-full truncate text-sm text-ink-primary">{primary}</span>
+      ) : null}
+      {secondary ? (
+        <span className="mt-0.5 max-w-full truncate text-xs text-ink-muted">{secondary}</span>
+      ) : null}
     </Link>
   );
 }

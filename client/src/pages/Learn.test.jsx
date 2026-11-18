@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -33,8 +33,8 @@ const ONE_PAGE = {
     {
       character: '日',
       unicode: '65e5',
-      meanings: ['day', 'sun'],
-      jlptLevel: 4,
+      meanings: ['day', 'sun', 'Japan', 'counter for days'],
+      jlptLevel: 5,
       grade: 1,
       strokeCount: 4,
       radical: '日',
@@ -205,5 +205,20 @@ describe('Learn browser (§7.3)', () => {
     renderLearn();
     const cell = await screen.findByRole('link', { name: /日/ });
     expect(cell.getAttribute('href')).toContain('/kanji/');
+  });
+
+  it('summarizes long meaning lists at whole-word boundaries', async () => {
+    mockApi({ list: ONE_PAGE });
+    renderLearn();
+    const cell = await screen.findByRole('link', { name: /日/ });
+
+    expect(within(cell).getByText('day')).toBeDefined();
+    expect(within(cell).getByText('sun · Japan +1')).toBeDefined();
+    expect(within(cell).getByText('N5')).toBeDefined();
+    expect(within(cell).getByTitle('New')).toBeDefined();
+    expect(within(cell).queryByText(/counte$/)).toBeNull();
+    expect(cell.getAttribute('title')).toBe(
+      '日 — day, sun, Japan, counter for days — New — JLPT N5'
+    );
   });
 });

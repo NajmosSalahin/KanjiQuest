@@ -530,7 +530,7 @@ Full-screen, distraction-free. Nav hidden on mobile (only bottom bar); top nav h
 
 **Filters:** Segmented tabs N5 | N4 | N3 | All. Active = vermillion underline, ink-primary. Below (16px gap), horizontal scrollable radical pills: radical character + count. Active pill = `--bg-subtle`, border-strong. Secondary filters row: "Sort by" (Frequency, Stroke count, JLPT), "Status" (All / Learning / Mastered).
 
-**Grid:** desktop 6 columns, tablet 4, mobile 3, gap 16px. Each cell: card with kanji (Noto Serif JP, 3rem), meanings truncated to one line (ink-secondary, text-xs, ellipsis), and a 6px progress dot — matcha filled if mastered, half-filled indigo if learning, outlined if new. Hover: border-strong + shadow-sm, 120ms. Click → `/kanji/:character`.
+**Grid:** desktop 6 columns, tablet 4, mobile 3, gap 16px. Each cell: card with kanji (Noto Serif JP, 3rem), the primary meaning (ink-primary, text-sm), and up to two more meanings summarized with a `+N` overflow count (ink-muted, text-xs) — never truncated mid-word; the full gloss list lives in the link `title`/`aria-label`. The JLPT level (`N5`–`N3`, font-mono, text-[10px], ink-muted) sits top-left when known, and the 6px progress dot sits top-right — matcha filled if mastered, half-filled indigo if learning, outlined if new. Content is vertically centered. Hover: border-strong + shadow-sm, 120ms. Click → `/kanji/:character`.
 
 **Pagination:** Server-side pagination, 50 per page with a "Load more" button, and virtualization via `@tanstack/react-virtual` once the loaded list exceeds 200 items. Do not fetch all 13,108 at once. Debounce search at 250ms and query the server, not a client-side array.
 

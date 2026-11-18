@@ -7,6 +7,7 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/); versions
 ## [Unreleased]
 
 - **Quest copy (open question #3 closed):** the 12 §6.7 phrases now ship as quest titles verbatim; descriptions were rewritten to add detail without repeating the title. Data-only change to `QUEST_DEFS`; rerun `npm run seed-quests -w server` against the live DB.
+- **Learn grid cell (D31):** long meaning lists no longer cut mid-word — primary meaning plus up to two secondaries and a `+N` overflow, with the full gloss list in the link title/aria-label. JLPT marker top-left, status dot top-right, content vertically centered; no API or data change.
 
 ## [0.11.0] — 2026-11-17 — Deployment + release polish (Phase 10) · tag `phase-10-complete`
 
